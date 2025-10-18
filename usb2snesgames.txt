@@ -1,3 +1,4 @@
 Super Mario World = F50DA4,F50DA2
 The Legend of Zelda = F500F2,F500F0
 Demons Blazon = F50090,F50093
+Young Merlin = F502D4,F502D5

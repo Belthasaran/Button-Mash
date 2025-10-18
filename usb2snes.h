@@ -23,7 +23,7 @@
 #include <QtWebSockets/QtWebSockets>
 
 
-#define USB2SNESURL "ws://localhost:8080/"
+#define USB2SNESURL "ws://localhost:23074/"
 
 
 class USB2snes : public QObject

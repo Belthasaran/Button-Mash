@@ -130,7 +130,7 @@ void InputSourceSelector::scanDevices()
     if (testSocket.waitForConnected(50))
         activateSnesClassicStuff();*/
     testSocket.close();
-    testSocket.connectToHost("localhost", 8080);
+    testSocket.connectToHost("localhost", 23074);
     if (testSocket.waitForConnected(50))
         activateUsb2SnesStuff();
     testSocket.close();

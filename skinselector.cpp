@@ -9,6 +9,7 @@
 #include "sqpath.h"
 
 #include <QDir>
+#include <QShortcut>
 #include <QStandardItemModel>
 
 QSettings* globalSetting;
@@ -120,6 +121,7 @@ void    SkinSelector::restoreLastSkin()
         }
     }
 }
+
 
 void    SkinSelector::saveSkinStarted()
 {

@@ -60,6 +60,7 @@ private:
     void    setPreviewScene(const RegularSkin &skin);
     void    saveSkinStarted();
     void    restoreLastSkin();
+
 };
 
 #endif // SKINSELECTOR_H
