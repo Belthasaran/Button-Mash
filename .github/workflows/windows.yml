@@ -30,7 +30,7 @@ jobs:
       -
        # I wish I could use Chocolatey or something else but it's a pain in the but
         name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v4
         with:
           version: '5.15.2'
       -
