@@ -126,9 +126,9 @@ void InputSourceSelector::scanDevices()
     if (testSocket.waitForConnected(50))
         activateSnesClassicTelnet();
     testSocket.close();
-    /*testSocket.connectToHost("169.254.13.37", 1042);
+    testSocket.connectToHost("169.254.13.37", 1042);
     if (testSocket.waitForConnected(50))
-        activateSnesClassicStuff();*/
+        activateSnesClassicStuff();
     testSocket.close();
     testSocket.connectToHost("localhost", 23074);
     if (testSocket.waitForConnected(50))

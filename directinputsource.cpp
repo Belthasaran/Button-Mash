@@ -8,6 +8,10 @@ DirectInputSource::DirectInputSource(int device)
     connect(controller, &QGameController::gameControllerAxisEvent, this, &DirectInputSource::handleAxisEvent);
     connect(&timer, &QTimer::timeout, controller, &QGameController::readGameController);
     timer.setInterval(10);
+    for (unsigned int i = 0; i < controller->axisCount(); i++)
+    {
+        oldAxisValue[i] = 0;
+    }
 }
 
 
@@ -78,21 +82,21 @@ void DirectInputSource::handleAxisEvent(QGameControllerAxisEvent *axisEvent)
         it.next();
         if (it.key().first == axisEvent->axis())
         {
-            qDebug() << it.value();
+            qDebug() << "Axis match " << it.value() << " old value " << oldAxisValue[axisEvent->axis()];
             if (axisEvent->value() == it.key().second)
             {
                 qDebug() << "Axis " << axisEvent->axis() << " pressed";
-                oldAxisValue[axisEvent->axis()] = axisEvent->value();
                 emit buttonPressed(it.value());
+                continue;
             }
             if (axisEvent->value() != oldAxisValue[axisEvent->axis()]
              && it.key().second == oldAxisValue[axisEvent->axis()])
             {
                 qDebug() << "Axis " << axisEvent->axis() << " released";
-                oldAxisValue[axisEvent->axis()] = axisEvent->value();
                 emit buttonReleased(it.value());
             }
         }
     }
+    oldAxisValue[axisEvent->axis()] = axisEvent->value();
     delete axisEvent;
 }

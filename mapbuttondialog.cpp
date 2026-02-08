@@ -36,6 +36,7 @@ void MapButtonDialog::setDevice(LocalControllerInfos device)
 {
     qGamepadDevice_id = -1;
     ui->nameLabel->setText(device.name);
+    qDebug() << device.id;
 #ifdef Q_OS_WIN
     directInputDevice_id = -1;
     directInputTimer.stop();
@@ -97,6 +98,7 @@ void MapButtonDialog::onButtonGroupClicked(QAbstractButton *button)
 
 void MapButtonDialog::onGamepadButtonPressEvent(int deviceId, QGamepadManager::GamepadButton button, double value)
 {
+    qDebug() << button;
     if (setMode)
     {
         LocalControllerButtonAxisInfos info;
@@ -125,46 +127,51 @@ void MapButtonDialog::onGamepadAxisEvent(int deviceId, QGamepadManager::GamepadA
         info.axis = axis;
         info.value = value;
         m_mapping[butVal] = info;
+        qDebug() << m_mapping.keys();
+        setMode = false;
         m_currentButton->setText(buttonToText(info));
         m_currentButton->setFlat(true);
-        setMode = false;
     }
 }
 
 #ifdef Q_OS_WIN
 void MapButtonDialog::onDirectInputButtonEvent(QGameControllerButtonEvent *event)
 {
-    qDebug() << "Direct Input event" << event->pressed();
+    qDebug() << "Direct Input Button event" << event->pressed();
     if (setMode)
     {
         if (event->pressed() && event->controllerId() == directInputDevice_id)
         {
+            setMode = false;
             LocalControllerButtonAxisInfos info;
             info.button = event->button();
             info.axis = -1;
             info.value = directInputDevice->buttonValue(info.button);
+            qDebug() << "Button" << info.button;
             m_mapping[butVal] = info;
             m_currentButton->setText(buttonToText(info));
             m_currentButton->setFlat(true);
-            setMode = false;
+
         }
     }
 }
 
 void MapButtonDialog::onDirectInputAxisEvent(QGameControllerAxisEvent *event)
 {
+    qDebug() << "Direct Input Axis event" << event->controllerId();
     if (setMode)
     {
         if (event->controllerId() == directInputDevice_id)
         {
+            setMode = false;
             LocalControllerButtonAxisInfos info;
             info.button = -1;
             info.axis = event->axis();
             info.value = event->value();
+            qDebug() << "Axis " << info.axis;
             m_mapping[butVal] = info;
             m_currentButton->setText(buttonToText(info));
             m_currentButton->setFlat(true);
-            setMode = false;
         }
     }
 }

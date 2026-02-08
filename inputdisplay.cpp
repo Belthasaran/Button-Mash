@@ -140,7 +140,7 @@ void    InputDisplay::setPianoLabel()
     alternateText[InputProvider::Start] = "ST";
     alternateText[InputProvider::Select] = "SEL";
 
-    foreach(InputProvider::SNESButton but, mapButtonToText.keys())
+    for(InputProvider::SNESButton& but : mapButtonToText.keys())
     {
         QString butText;
         if (alternateText.contains(but))
@@ -156,6 +156,7 @@ void    InputDisplay::setPianoLabel()
 
 void InputDisplay::onButtonPressed(InputProvider::SNESButton button)
 {
+    qDebug() << button << "Pressed" << QTime::currentTime();
     if (mapItems.contains(mapButtonToText[button]))
         mapItems[mapButtonToText[button]]->show();
     PianoEvent pe;
@@ -165,9 +166,10 @@ void InputDisplay::onButtonPressed(InputProvider::SNESButton button)
 
 void InputDisplay::onButtonReleased(InputProvider::SNESButton button)
 {
+    qDebug() << button << "Released" << QTime::currentTime();
     if (mapItems.contains(mapButtonToText[button]))
         mapItems[mapButtonToText[button]]->hide();
-    if (!pianoEvents[button].isEmpty())
+    if (pianoEvents.contains(button) && pianoEvents[button].isEmpty() == false)
         pianoEvents[button].last().endTime = QTime::currentTime();
 }
 
@@ -175,14 +177,17 @@ void    InputDisplay::filterPianoEvent()
 {
         QTime now = QTime::currentTime();
         QTime bottomTime = now.addMSecs(static_cast<int>(pianoTimeRange) * -1);
-        foreach (InputProvider::SNESButton but, pianoEvents.keys())
+        for (InputProvider::SNESButton& but : pianoEvents.keys())
         {
             QMutableListIterator<PianoEvent> iPe(pianoEvents[but]);
             while (iPe.hasNext())
             {
-                PianoEvent pe = iPe.next();
-                if (!pe.endTime.isNull() && pe.endTime < bottomTime)
+                PianoEvent& pe = iPe.next();
+                if (pe.endTime.isNull() == false && pe.endTime.isValid() && pe.endTime <= bottomTime)
+                {
+                    //qDebug() << "removing" << but << " Time : " << pe.startTime << " - " << pe.endTime;
                     iPe.remove();
+                }
 
             }
         }
@@ -191,16 +196,22 @@ void    InputDisplay::filterPianoEvent()
 void InputDisplay::onPianoTimerTimeout()
 {
     QTime now = QTime::currentTime();
-    QTime bottomTime = now.addMSecs(static_cast<int>(pianoTimeRange) * -1);
+    //QTime bottomTime = now.addMSecs(static_cast<int>(pianoTimeRange) * -1);
     filterPianoEvent();
     QPainter pa(pianoDisplay);
     pa.fillRect(pianoDisplay->rect(), Qt::black);
 
-    foreach (InputProvider::SNESButton but, pianoEvents.keys())
+    for (InputProvider::SNESButton& but : pianoEvents.keys())
     {
         const QList<PianoEvent> ev = pianoEvents[but];
-            foreach(PianoEvent pe, ev)
+            for (const PianoEvent& pe : ev)
             {
+                /*if (pe.endTime.isNull())
+                {
+                    qDebug() << "Button without endtime" << but << pe.startTime;
+                    if (pe.startTime.msecsTo(now) > 1000)
+                        exit(0);
+                }*/
                 //qDebug() << pe.startTime << pe.endTime;
                 int yRect, hRect;
                 if (pe.endTime.isNull())

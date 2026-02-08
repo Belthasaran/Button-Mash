@@ -20,6 +20,7 @@ LocalControllerManager *LocalControllerManager::getManager()
 
 QList<LocalControllerInfos> LocalControllerManager::listController()
 {
+    qDebug() << "Scanning controllers";
     QList<LocalControllerInfos> toret;
     auto list = QGamepadManager::instance()->connectedGamepads();
     for (auto id : list)
@@ -27,6 +28,7 @@ QList<LocalControllerInfos> LocalControllerManager::listController()
         LocalControllerInfos info;
         info.name = QGamepadManager::instance()->gamepadName(id);
         info.id = "QGamepad " + QString::number(id);
+        qDebug() << "Added Xinput " << info.name;
         toret << info;
     }
 #ifdef Q_OS_WIN
@@ -38,6 +40,7 @@ QList<LocalControllerInfos> LocalControllerManager::listController()
             LocalControllerInfos info;
             info.name = controller.description();
             info.id = "DirectInput " + QString::number(i);
+            qDebug() << "Added Direct Input " << info.name;
             toret << info;
         }
     }
