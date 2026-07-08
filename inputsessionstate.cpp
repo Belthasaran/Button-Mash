@@ -1,23 +1,24 @@
 #include "inputsessionstate.h"
 #include "snesbitorder.h"
-#include <QRandomGenerator>
 #include <QDateTime>
 
 InputSessionState::InputSessionState()
 {
+    m_sessionId = QByteArray(16, '\0');
     resetSession(quint64(QDateTime::currentMSecsSinceEpoch()));
 }
 
-void InputSessionState::generateSessionId()
+void InputSessionState::setSessionId(const QByteArray &id16)
 {
-    m_sessionId.resize(16);
-    for (int i = 0; i < 16; ++i)
-        m_sessionId[i] = char(QRandomGenerator::global()->bounded(256));
+    m_sessionId = id16;
+    if (m_sessionId.size() < 16)
+        m_sessionId.append(QByteArray(16 - m_sessionId.size(), '\0'));
+    else if (m_sessionId.size() > 16)
+        m_sessionId = m_sessionId.left(16);
 }
 
 void InputSessionState::resetSession(quint64 nowMs)
 {
-    generateSessionId();
     m_current = 0;
     m_sequence = 0;
     m_entryCount = 0;

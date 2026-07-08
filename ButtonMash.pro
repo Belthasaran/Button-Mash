@@ -59,6 +59,7 @@ SOURCES += \
         buttonmashremoteprovider.cpp \
         inputsessionstate.cpp \
         inputsessionlogger.cpp \
+        sessioncrypto.cpp \
         inputmirrormanager.cpp \
         mirrortargetsdialog.cpp
 
@@ -86,6 +87,7 @@ HEADERS += \
         buttonmashremoteprovider.h \
         inputsessionstate.h \
         inputsessionlogger.h \
+        sessioncrypto.h \
         inputmirrormanager.h \
         mirrortargetsdialog.h \
         third_party/xxhash.h
@@ -100,6 +102,8 @@ FORMS += \
         mirrortargetsdialog.ui
 
 INCLUDEPATH += $$PWD
+
+LIBS += -lcrypto
 
 RC_FILE += \
     buttonmash.rc

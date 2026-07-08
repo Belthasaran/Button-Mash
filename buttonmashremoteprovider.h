@@ -8,6 +8,11 @@ class ButtonMashRemoteProvider : public InputProvider
 {
     Q_OBJECT
 public:
+    // When true, trailing XXH3 is computed; when false, trailer is eight zero bytes.
+    static constexpr bool kBmirXxh3Enabled = true;
+    static constexpr int kBmirBodyBytes = 36;
+    static constexpr int kBmirXxh3Bytes = 8;
+
     explicit ButtonMashRemoteProvider(quint16 port = 27151, QObject *parent = nullptr);
     ~ButtonMashRemoteProvider() override;
 

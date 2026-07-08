@@ -79,8 +79,7 @@ void InputMirrorManager::startSession()
     m_bits = 0;
     if (!m_shareEnabled)
         return;
-    // Always mint a new session for this display run (even if only UDP mirror, no files).
-    m_logger.state().resetSession(quint64(QDateTime::currentMSecsSinceEpoch()));
+    // startLogging mints Ed25519 keys and derives session id.
     m_logger.startLogging();
 }
 

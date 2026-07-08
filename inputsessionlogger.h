@@ -2,6 +2,7 @@
 #define INPUTSESSIONLOGGER_H
 
 #include "inputsessionstate.h"
+#include "sessioncrypto.h"
 #include <QFile>
 #include <QObject>
 #include <QTimer>
@@ -77,6 +78,12 @@ public:
     void maybeRotateIdleAt(quint64 nowMs);
     bool maybeWriteActivitySyncAt(quint64 nowMs);
     int syncHeaderWriteCount() const { return m_syncHeaderWriteCount; }
+    int ordinaryEntriesSinceSync() const { return m_ordinarySinceSync; }
+    QByteArray publicKeyForTest() const { return m_keys.publicKey; }
+    bool hasSigningKeys() const { return m_keys.valid(); }
+    QByteArray lastSyncHashForTest() const { return m_lastSyncHash; }
+    QByteArray lastSyncSigForTest() const { return m_lastSyncSig; }
+    const QByteArray &entriesSinceSyncBufferForTest() const { return m_entriesSinceSync; }
 
     // Compile-time: closeout sync + 15s activity syncs (until a user setting exists).
     static constexpr bool kExtraIdleSyncsEnabled = true;
@@ -84,6 +91,7 @@ public:
     static constexpr quint64 kSyncIntervalMs = 5ull * 60ull * 1000ull;
     static constexpr quint64 kHeartbeatMs = 60ull * 1000ull;
     static constexpr quint64 kActivitySyncMs = 15ull * 1000ull;
+    static constexpr int kMaxOrdinaryBetweenSync = 200;
 
 private slots:
     void onTick();
@@ -91,12 +99,15 @@ private slots:
 private:
     void openLogsFresh();
     void closeLogs();
+    bool beginSessionKeys(quint64 nowMs);
+    void wipeSessionKeys();
     void writeSyncHeader(quint64 nowMs);
     void writeInputEntry(quint64 nowMs, quint16 before, quint16 after, quint16 pressed, quint16 released, bool isHeartbeat);
     void maybeRotateIdle(quint64 nowMs);
     bool maybeWriteActivitySync(quint64 nowMs);
-    QByteArray buildSyncHeader(quint64 nowMs, quint64 *selfHashOut);
-    QByteArray buildInputEntry(quint64 nowMs, quint16 before, quint16 after, quint16 pressed, quint16 released, quint64 *selfHashOut);
+    void maybeForceSyncByCount(quint64 nowMs);
+    QByteArray buildSyncHeader(quint64 nowMs);
+    QByteArray buildInputEntry(quint64 nowMs, quint16 before, quint16 after, quint16 pressed, quint16 released);
     void appendBin(const QByteArray &entry);
     void appendFullText(const QString &line);
     void appendSyncText(const QString &line);
@@ -118,6 +129,7 @@ private:
     static int digitWidth(quint64 v);
 
     InputSessionState m_state;
+    SessionCrypto::KeyPair m_keys;
     QTimer m_timer;
     bool m_active;
 
@@ -135,6 +147,10 @@ private:
     QFile m_syncTextFile;
 
     QByteArray m_prevEntryHash;
+    QByteArray m_entriesSinceSync;
+    int m_ordinarySinceSync;
+    QByteArray m_lastSyncHash;
+    QByteArray m_lastSyncSig;
     quint64 m_lastSyncMs;
     quint64 m_lastHeartbeatMs;
     quint64 m_lastInputEntryMs;

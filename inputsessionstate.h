@@ -11,7 +11,9 @@ class InputSessionState
 public:
     InputSessionState();
 
+    // Resets counters; does not mint crypto material. Caller must setSessionId().
     void resetSession(quint64 nowMs);
+    void setSessionId(const QByteArray &id16);
     QByteArray sessionId() const { return m_sessionId; }
     QString sessionIdHex() const;
 
@@ -46,7 +48,6 @@ public:
 
 private:
     void accumulateHold(quint64 nowMs);
-    void generateSessionId();
 
     QByteArray m_sessionId;
     quint16 m_current;

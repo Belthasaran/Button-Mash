@@ -5,7 +5,28 @@
 #include <QtEndian>
 #include <cstring>
 
+#define XXH_INLINE_ALL
+#include "third_party/xxhash.h"
+
 static const char kBmirMagic[4] = { 'B', 'M', 'I', 'R' };
+
+static QByteArray xxh3_64_be(const QByteArray &data)
+{
+    XXH64_hash_t h = XXH3_64bits(data.constData(), size_t(data.size()));
+    QByteArray out(8, '\0');
+    quint64 be = qToBigEndian(quint64(h));
+    std::memcpy(out.data(), &be, 8);
+    return out;
+}
+
+static bool isAllZero(const QByteArray &b)
+{
+    for (char c : b) {
+        if (c != '\0')
+            return false;
+    }
+    return true;
+}
 
 ButtonMashRemoteProvider::ButtonMashRemoteProvider(quint16 port, QObject *parent)
     : InputProvider(parent)
@@ -49,14 +70,15 @@ void ButtonMashRemoteProvider::stop()
 
 bool ButtonMashRemoteProvider::isReady()
 {
-    return m_listening && m_socket->state() == QAbstractSocket::BoundState;
+    // Ready as a selectable source before bind; SkinSelector starts listening on Start.
+    return true;
 }
 
 QString ButtonMashRemoteProvider::statusText()
 {
-    if (isReady())
+    if (m_listening && m_socket->state() == QAbstractSocket::BoundState)
         return tr("Listening for Button Mash remote on UDP %1").arg(m_port);
-    return tr("Not listening for Button Mash remote");
+    return tr("Ready to listen for Button Mash remote on UDP %1").arg(m_port);
 }
 
 QString ButtonMashRemoteProvider::name() const
@@ -68,7 +90,7 @@ QByteArray ButtonMashRemoteProvider::buildPacket(quint16 after, quint16 pressed,
                                                  quint64 timestampMs, const QByteArray &sessionId, bool fullState)
 {
     QByteArray pkt;
-    pkt.reserve(4 + 1 + 1 + 8 + 16 + 2 + 2 + 2);
+    pkt.reserve(kBmirBodyBytes + kBmirXxh3Bytes);
     pkt.append(kBmirMagic, 4);
     pkt.append(char(0x01)); // version
     pkt.append(char(fullState ? 0x03 : 0x01));
@@ -88,6 +110,11 @@ QByteArray ButtonMashRemoteProvider::buildPacket(quint16 after, quint16 pressed,
     pkt.append(reinterpret_cast<const char *>(&beAfter), 2);
     pkt.append(reinterpret_cast<const char *>(&bePressed), 2);
     pkt.append(reinterpret_cast<const char *>(&beReleased), 2);
+    Q_ASSERT(pkt.size() == kBmirBodyBytes);
+    if (kBmirXxh3Enabled)
+        pkt.append(xxh3_64_be(pkt));
+    else
+        pkt.append(QByteArray(kBmirXxh3Bytes, '\0'));
     return pkt;
 }
 
@@ -114,13 +141,23 @@ void ButtonMashRemoteProvider::applyBitvector(quint16 after, quint16 pressed, qu
 
 bool ButtonMashRemoteProvider::handleDatagram(const QByteArray &datagram)
 {
-    if (datagram.size() < 4 + 1 + 1 + 8 + 16 + 6)
+    if (datagram.size() < kBmirBodyBytes)
         return false;
     if (std::memcmp(datagram.constData(), kBmirMagic, 4) != 0)
         return false;
     const uchar version = uchar(datagram.at(4));
     if (version != 0x01)
         return false;
+
+    if (datagram.size() >= kBmirBodyBytes + kBmirXxh3Bytes) {
+        const QByteArray trailer = datagram.mid(kBmirBodyBytes, kBmirXxh3Bytes);
+        if (!isAllZero(trailer)) {
+            const QByteArray body = datagram.left(kBmirBodyBytes);
+            if (xxh3_64_be(body) != trailer)
+                return false;
+        }
+    }
+
     const uchar flags = uchar(datagram.at(5));
     const bool fullState = (flags & 0x02) != 0;
     int off = 4 + 1 + 1 + 8 + 16;

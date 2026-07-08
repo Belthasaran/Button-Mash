@@ -50,6 +50,7 @@ InputSessionLogger::InputSessionLogger(QObject *parent)
     , m_syncOnlyTextEnabled(false)
     , m_lastNEnabled(false)
     , m_lastN(10)
+    , m_ordinarySinceSync(0)
     , m_lastSyncMs(0)
     , m_lastHeartbeatMs(0)
     , m_lastInputEntryMs(0)
@@ -67,6 +68,7 @@ InputSessionLogger::InputSessionLogger(QObject *parent)
 InputSessionLogger::~InputSessionLogger()
 {
     stopLogging();
+    wipeSessionKeys();
 }
 
 void InputSessionLogger::setBinLog(bool enabled, const QString &path)
@@ -126,8 +128,13 @@ void InputSessionLogger::startLogging()
     if (!(m_binEnabled || m_fullTextEnabled || m_syncOnlyTextEnabled || m_lastNEnabled))
         return;
     const quint64 now = quint64(QDateTime::currentMSecsSinceEpoch());
-    m_state.resetSession(now);
+    if (!beginSessionKeys(now))
+        return;
     m_prevEntryHash = QByteArray(8, '\0');
+    m_entriesSinceSync.clear();
+    m_ordinarySinceSync = 0;
+    m_lastSyncHash.clear();
+    m_lastSyncSig.clear();
     m_rollingInputs.clear();
     m_rollingSyncs.clear();
     m_lastInputEntryMs = 0;
@@ -151,6 +158,27 @@ void InputSessionLogger::stopLogging()
     m_timer.stop();
     m_active = false;
     closeLogs();
+    wipeSessionKeys();
+}
+
+bool InputSessionLogger::beginSessionKeys(quint64 nowMs)
+{
+    wipeSessionKeys();
+    if (!SessionCrypto::mintKeyPair(&m_keys))
+        return false;
+    const QByteArray sid = SessionCrypto::sessionIdFromPublicKey(m_keys.publicKey);
+    if (sid.size() != SessionCrypto::kSessionIdBytes) {
+        wipeSessionKeys();
+        return false;
+    }
+    m_state.resetSession(nowMs);
+    m_state.setSessionId(sid);
+    return true;
+}
+
+void InputSessionLogger::wipeSessionKeys()
+{
+    SessionCrypto::wipeKeyPair(&m_keys);
 }
 
 void InputSessionLogger::appendBin(const QByteArray &entry)
@@ -377,16 +405,24 @@ void InputSessionLogger::rewriteSyncRollingFiles()
     writeAtomicText(stem + QStringLiteral("_sync.json"), json);
 }
 
-QByteArray InputSessionLogger::buildSyncHeader(quint64 nowMs, quint64 *selfHashOut)
+QByteArray InputSessionLogger::buildSyncHeader(quint64 nowMs)
 {
     m_state.noteCheckpoint(nowMs, false);
+
+    QByteArray hash = m_entriesSinceSync.isEmpty()
+        ? QByteArray(SessionCrypto::kSha256Bytes, '\0')
+        : SessionCrypto::sha256(m_entriesSinceSync);
 
     QByteArray body;
     body.append(kSyncMagic, 8);
     body.append(char(0xAA));
-    body.append(char(0x01));
+    body.append(char(0x02));
     appendU64BE(body, nowMs);
     body.append(m_state.sessionId());
+    QByteArray pub = m_keys.publicKey;
+    if (pub.size() != SessionCrypto::kPubKeyBytes)
+        pub = QByteArray(SessionCrypto::kPubKeyBytes, '\0');
+    body.append(pub);
     appendU32BE(body, m_state.sequence());
     appendU64BE(body, m_state.entryCount());
     appendU64BE(body, m_state.inputChangeCount());
@@ -398,27 +434,26 @@ QByteArray InputSessionLogger::buildSyncHeader(quint64 nowMs, quint64 *selfHashO
         appendU32BE(body, m_state.timesHeld()[size_t(i)]);
     for (int i = 0; i < 16; ++i)
         appendU64BE(body, m_state.totalHeldMs()[size_t(i)]);
+    body.append(hash);
 
-    QByteArray chain = xxh3_64(body);
-    QByteArray withChain = body;
-    withChain.append(chain);
+    QByteArray sig = SessionCrypto::signEd25519(m_keys.privateKey, body);
+    if (sig.size() != SessionCrypto::kSigBytes)
+        sig = QByteArray(SessionCrypto::kSigBytes, '\0');
 
-    QByteArray selfHash = xxh3_64(withChain);
-    if (selfHashOut)
-        *selfHashOut = qFromBigEndian<quint64>(reinterpret_cast<const uchar *>(selfHash.constData()));
+    m_lastSyncHash = hash;
+    m_lastSyncSig = sig;
 
-    QByteArray entry = withChain;
-    entry.append(selfHash);
-    entry.append(QByteArray(32, '\0'));
+    QByteArray entry = body;
+    entry.append(sig);
     return entry;
 }
 
 QByteArray InputSessionLogger::buildInputEntry(quint64 nowMs, quint16 before, quint16 after,
-                                               quint16 pressed, quint16 released, quint64 *selfHashOut)
+                                               quint16 pressed, quint16 released)
 {
     QByteArray body;
     body.append(char(0x01));
-    body.append(char(0x01));
+    body.append(char(0x02));
     appendU64BE(body, nowMs);
     appendU32BE(body, m_state.sequence());
     appendU16BE(body, before);
@@ -431,12 +466,9 @@ QByteArray InputSessionLogger::buildInputEntry(quint64 nowMs, quint16 before, qu
     QByteArray withPrev = body;
     withPrev.append(prev);
     QByteArray selfHash = xxh3_64(withPrev);
-    if (selfHashOut)
-        *selfHashOut = qFromBigEndian<quint64>(reinterpret_cast<const uchar *>(selfHash.constData()));
 
     QByteArray entry = withPrev;
     entry.append(selfHash);
-    entry.append(QByteArray(32, '\0'));
     return entry;
 }
 
@@ -451,15 +483,20 @@ void InputSessionLogger::writeSyncHeader(quint64 nowMs)
     syncRec.timestampMs = nowMs;
     syncRec.entriesSinceLastSync = entriesSince;
 
-    quint64 selfH = 0;
-    QByteArray entry = buildSyncHeader(nowMs, &selfH);
+    QByteArray entry = buildSyncHeader(nowMs);
     appendBin(entry);
-    const QByteArray selfHashBytes = entry.mid(entry.size() - 40, 8);
-    const QByteArray chainHashBytes = entry.mid(entry.size() - 48, 8);
-    m_prevEntryHash = selfHashBytes;
-    const QString syncLine2 =
-        QString::fromLatin1("AA01,") + QString::number(nowMs) + QLatin1Char(',')
+
+    const QByteArray hash = entry.mid(entry.size() - SessionCrypto::kSigBytes - SessionCrypto::kSha256Bytes,
+                                      SessionCrypto::kSha256Bytes);
+    const QByteArray sig = entry.right(SessionCrypto::kSigBytes);
+    m_prevEntryHash = QByteArray(8, '\0');
+    m_entriesSinceSync.clear();
+    m_ordinarySinceSync = 0;
+
+    const QString syncLine =
+        QString::fromLatin1("AA02,") + QString::number(nowMs) + QLatin1Char(',')
         + m_state.sessionIdHex() + QLatin1Char(',')
+        + QString::fromLatin1(m_keys.publicKey.toHex().toUpper()) + QLatin1Char(',')
         + QString::number(m_state.sequence()) + QLatin1Char(',')
         + QString::number(m_state.entryCount()) + QLatin1Char(',')
         + QString::number(m_state.inputChangeCount()) + QLatin1Char(',')
@@ -467,11 +504,11 @@ void InputSessionLogger::writeSyncHeader(quint64 nowMs)
         + formatPressedList(m_state.timesReleased()) + QLatin1Char(',')
         + formatHeld32(m_state.timesHeld()) + QLatin1Char(',')
         + formatHeld64(m_state.totalHeldMs()) + QLatin1Char(',')
-        + QString::fromLatin1(chainHashBytes.toBase64()) + QLatin1Char(',')
-        + QString::fromLatin1(selfHashBytes.toBase64());
+        + QString::fromLatin1(hash.toHex().toUpper()) + QLatin1Char(',')
+        + QString::fromLatin1(sig.toBase64());
 
-    appendFullText(syncLine2);
-    appendSyncText(syncLine2);
+    appendFullText(syncLine);
+    appendSyncText(syncLine);
 
     syncRec.pressSession = m_state.timesPressed();
     syncRec.releaseSession = m_state.timesReleased();
@@ -500,14 +537,17 @@ void InputSessionLogger::writeInputEntry(quint64 nowMs, quint16 before, quint16 
 {
     if (!m_active)
         return;
-    QByteArray entry = buildInputEntry(nowMs, before, after, pressed, released, nullptr);
+    QByteArray entry = buildInputEntry(nowMs, before, after, pressed, released);
     appendBin(entry);
-    const QByteArray selfHashBytes = entry.mid(entry.size() - 40, 8);
-    const QByteArray prevHashBytes = entry.mid(entry.size() - 48, 8);
+    m_entriesSinceSync.append(entry);
+    ++m_ordinarySinceSync;
+
+    const QByteArray selfHashBytes = entry.right(8);
+    const QByteArray prevHashBytes = entry.mid(entry.size() - 16, 8);
     m_prevEntryHash = selfHashBytes;
 
     const QString line =
-        QString::fromLatin1("0101,") + QString::number(nowMs) + QLatin1Char(',')
+        QString::fromLatin1("0102,") + QString::number(nowMs) + QLatin1Char(',')
         + m_state.sessionIdHex() + QLatin1Char(',')
         + QString::number(m_state.sequence()) + QLatin1Char(',')
         + hex4(before) + QLatin1Char(',')
@@ -537,6 +577,13 @@ void InputSessionLogger::writeInputEntry(quint64 nowMs, quint16 before, quint16 
 
     m_lastInputEntryMs = nowMs;
     m_state.bumpSequenceAfterEntry(!isHeartbeat);
+    maybeForceSyncByCount(nowMs);
+}
+
+void InputSessionLogger::maybeForceSyncByCount(quint64 nowMs)
+{
+    if (m_ordinarySinceSync >= kMaxOrdinaryBetweenSync)
+        writeSyncHeader(nowMs);
 }
 
 void InputSessionLogger::onButton(InputProvider::SNESButton button, bool pressed)
@@ -596,8 +643,16 @@ void InputSessionLogger::maybeRotateIdle(quint64 nowMs)
     if (kExtraIdleSyncsEnabled)
         writeSyncHeader(nowMs);
 
-    m_state.resetSession(nowMs);
+    wipeSessionKeys();
+    if (!beginSessionKeys(nowMs)) {
+        m_active = false;
+        m_timer.stop();
+        closeLogs();
+        return;
+    }
     m_prevEntryHash = QByteArray(8, '\0');
+    m_entriesSinceSync.clear();
+    m_ordinarySinceSync = 0;
     m_rollingInputs.clear();
     m_rollingSyncs.clear();
     m_lastInputEntryMs = 0;
@@ -630,11 +685,11 @@ void InputSessionLogger::onTick()
 
 QByteArray InputSessionLogger::encodeSyncHeaderForTest(quint64 nowMs)
 {
-    return buildSyncHeader(nowMs, nullptr);
+    return buildSyncHeader(nowMs);
 }
 
 QByteArray InputSessionLogger::encodeInputEntryForTest(quint64 nowMs, quint16 before, quint16 after,
                                                        quint16 pressed, quint16 released)
 {
-    return buildInputEntry(nowMs, before, after, pressed, released, nullptr);
+    return buildInputEntry(nowMs, before, after, pressed, released);
 }

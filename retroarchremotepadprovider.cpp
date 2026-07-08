@@ -64,14 +64,15 @@ void RetroArchRemotePadProvider::stop()
 
 bool RetroArchRemotePadProvider::isReady()
 {
-    return m_listening && m_socket->state() == QAbstractSocket::BoundState;
+    // Ready as a selectable source before bind; SkinSelector starts listening on Start.
+    return true;
 }
 
 QString RetroArchRemotePadProvider::statusText()
 {
-    if (isReady())
+    if (m_listening && m_socket->state() == QAbstractSocket::BoundState)
         return tr("Listening for RetroArch RemotePad on UDP %1").arg(m_port);
-    return tr("Not listening for RetroArch RemotePad");
+    return tr("Ready to listen for RetroArch RemotePad on UDP %1").arg(m_port);
 }
 
 QString RetroArchRemotePadProvider::name() const
