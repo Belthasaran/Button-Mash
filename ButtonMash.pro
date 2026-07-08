@@ -53,7 +53,14 @@ SOURCES += \
         configurationdialog.cpp \
         skineditor.cpp \
         localcontroller.cpp \
-        localcontrollermanager.cpp
+        localcontrollermanager.cpp \
+        snesbitorder.cpp \
+        retroarchremotepadprovider.cpp \
+        buttonmashremoteprovider.cpp \
+        inputsessionstate.cpp \
+        inputsessionlogger.cpp \
+        inputmirrormanager.cpp \
+        mirrortargetsdialog.cpp
 
 HEADERS += \
         skinselector.h \
@@ -73,7 +80,15 @@ HEADERS += \
         skineditor.h \
         localcontroller.h \
         localcontrollermanager.h \
-        sqpath.h
+        sqpath.h \
+        snesbitorder.h \
+        retroarchremotepadprovider.h \
+        buttonmashremoteprovider.h \
+        inputsessionstate.h \
+        inputsessionlogger.h \
+        inputmirrormanager.h \
+        mirrortargetsdialog.h \
+        third_party/xxhash.h
 
 FORMS += \
         skinselector.ui \
@@ -81,7 +96,10 @@ FORMS += \
         inputsourceselector.ui \
         mapbuttondialog.ui \
         configurationdialog.ui \
-        skineditor.ui
+        skineditor.ui \
+        mirrortargetsdialog.ui
+
+INCLUDEPATH += $$PWD
 
 RC_FILE += \
     buttonmash.rc

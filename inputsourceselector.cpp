@@ -26,6 +26,9 @@ const QString SETTING_DIRECT_INPUT = "DirectInput";
 const QString SETTING_LOCAL_CONTROLLER = "LocalController";
 const QString SETTING_LOCALCONTROLLER_MAPPING = "LocalController/mapping";
 const QString SETTING_LOCALCONTROLLER_DEVICEID = "LocalControllerDeviceId";
+const QString SETTING_REMOTE_SERVER = "RemoteServer";
+const QString SETTING_REMOTE_PROTOCOL = "RemoteProtocol";
+const QString SETTING_REMOTE_PORT = "RemotePort";
 
 InputSourceSelector::InputSourceSelector(QWidget *parent) :
     QDialog(parent),
@@ -39,6 +42,8 @@ InputSourceSelector::InputSourceSelector(QWidget *parent) :
     usb2snesProvider = nullptr;
     m_currentProvider = nullptr;
     localcontrollerProvider = nullptr;
+    retroArchRemoteProvider = nullptr;
+    buttonMashRemoteProvider = nullptr;
     m_delai = 0;
     if (globalSetting->contains(SETTING_DELAI))
     {
@@ -95,6 +100,18 @@ InputProvider *InputSourceSelector::getLastProvider()
             localcontrollerProvider->setMapping(localcontrollerMapping);
             ui->xinputRadioButton->setChecked(true);
             m_currentProvider = localcontrollerProvider;
+        }
+        if (inputSource == SETTING_REMOTE_SERVER)
+        {
+            ui->remoteRadioButton->setChecked(true);
+            const QString proto = globalSetting->value("inputSource/" + SETTING_REMOTE_PROTOCOL, QStringLiteral("ButtonMash")).toString();
+            const int idx = ui->remoteProtocolCombo->findText(proto);
+            ui->remoteProtocolCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+            ui->remotePortSpin->setValue(int(globalSetting->value("inputSource/" + SETTING_REMOTE_PORT, 27151).toUInt()));
+            ensureRemoteProvider();
+            m_currentProvider = (proto == QLatin1String("RetroArchRemotePad"))
+                    ? static_cast<InputProvider*>(retroArchRemoteProvider)
+                    : static_cast<InputProvider*>(buttonMashRemoteProvider);
         }
         return m_currentProvider;
     } else {
@@ -293,6 +310,27 @@ void InputSourceSelector::ensureLocalControllerProvider(int comboIndex)
         m_currentProvider = localcontrollerProvider;
 }
 
+void InputSourceSelector::ensureRemoteProvider()
+{
+    const quint16 port = quint16(ui->remotePortSpin->value());
+    const QString proto = ui->remoteProtocolCombo->currentText();
+    if (proto == QLatin1String("RetroArchRemotePad")) {
+        if (retroArchRemoteProvider == nullptr)
+            retroArchRemoteProvider = new RetroArchRemotePadProvider(port);
+        else
+            retroArchRemoteProvider->setPort(port);
+        if (ui->remoteRadioButton->isChecked())
+            m_currentProvider = retroArchRemoteProvider;
+    } else {
+        if (buttonMashRemoteProvider == nullptr)
+            buttonMashRemoteProvider = new ButtonMashRemoteProvider(port);
+        else
+            buttonMashRemoteProvider->setPort(port);
+        if (ui->remoteRadioButton->isChecked())
+            m_currentProvider = buttonMashRemoteProvider;
+    }
+}
+
 void InputSourceSelector::syncCurrentProviderFromSelection()
 {
     if (ui->snesClassicRadioButton->isChecked())
@@ -318,6 +356,10 @@ void InputSourceSelector::syncCurrentProviderFromSelection()
         ui->mappingButton->setEnabled(true);
         ensureLocalControllerProvider();
         m_currentProvider = localcontrollerProvider;
+    }
+    else if (ui->remoteRadioButton->isChecked())
+    {
+        ensureRemoteProvider();
     }
 }
 
@@ -346,6 +388,12 @@ void InputSourceSelector::on_buttonBox_accepted()
         LocalControllerManager::getManager()->saveMapping(*globalSetting, "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING, localcontrollerMapping);
         if (localcontrollerProvider != nullptr)
             localcontrollerProvider->setMapping(localcontrollerMapping);
+    }
+    if (ui->remoteRadioButton->isChecked())
+    {
+        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_REMOTE_SERVER);
+        globalSetting->setValue("inputSource/" + SETTING_REMOTE_PROTOCOL, ui->remoteProtocolCombo->currentText());
+        globalSetting->setValue("inputSource/" + SETTING_REMOTE_PORT, ui->remotePortSpin->value());
     }
     m_delai = ui->delaiSpinBox->value();
     if (m_delai != 0)
@@ -396,6 +444,10 @@ void InputSourceSelector::onSourceButtonClicked(QAbstractButton *but)
         ui->mappingButton->setEnabled(true);
         ensureLocalControllerProvider();
         m_currentProvider = localcontrollerProvider;
+    }
+    if (but == ui->remoteRadioButton)
+    {
+        ensureRemoteProvider();
     }
 }
 

@@ -11,6 +11,8 @@
 #include "usb2snes.h"
 #include "usb2snessource.h"
 #include "localcontroller.h"
+#include "retroarchremotepadprovider.h"
+#include "buttonmashremoteprovider.h"
 
 namespace Ui {
 class InputSourceSelector;
@@ -61,6 +63,8 @@ private:
     LocalController*    localcontrollerProvider;
     QList<LocalControllerInfos> localcontrollerList;
     LocalControllerMapping  localcontrollerMapping;
+    RetroArchRemotePadProvider* retroArchRemoteProvider;
+    ButtonMashRemoteProvider* buttonMashRemoteProvider;
 
     void    activateSnesClassicTelnet();
     void    activateSnesClassicStuff();
@@ -68,6 +72,7 @@ private:
     void    setArduinoInfo();
     void    setLocalControllers();
     void    ensureLocalControllerProvider(int comboIndex = -1);
+    void    ensureRemoteProvider();
     void    syncCurrentProviderFromSelection();
 
     // QDialog interface

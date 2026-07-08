@@ -248,6 +248,65 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QRadioButton" name="remoteRadioButton">
+          <property name="text">
+           <string>Remote server</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">sourceRadioGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="remoteProtoLayout">
+          <item>
+           <widget class="QLabel" name="remoteProtoLabel">
+            <property name="text">
+             <string>Protocol</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="remoteProtocolCombo">
+            <item>
+             <property name="text">
+              <string>ButtonMash</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RetroArchRemotePad</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="remotePortLayout">
+          <item>
+           <widget class="QLabel" name="remotePortLabel">
+            <property name="text">
+             <string>Listen port</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="remotePortSpin">
+            <property name="maximum">
+             <number>65535</number>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="value">
+             <number>27151</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
        </layout>
       </item>
       <item>

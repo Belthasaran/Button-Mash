@@ -8,12 +8,30 @@
 #include "inputdisplay.h"
 #include "skinparser.h"
 #include "sqpath.h"
+#include "inputmirrormanager.h"
+#include "mirrortargetsdialog.h"
 
 #include <QDir>
+#include <QProcessEnvironment>
 #include <QShortcut>
 #include <QStandardItemModel>
 
 QSettings* globalSetting;
+
+static QSettings *createButtonMashSettings()
+{
+    const QString overridePath =
+        QProcessEnvironment::systemEnvironment().value(QStringLiteral("BUTTONMASH_CONFIG"));
+    if (!overridePath.isEmpty()) {
+        // Explicit file path: read/save only this config (for multiple test instances).
+        return new QSettings(overridePath, QSettings::IniFormat);
+    }
+#ifdef Q_OS_WINDOWS
+    return new QSettings("ButtonMash", QSettings::IniFormat);
+#else
+    return new QSettings("ButtonMash");
+#endif
+}
 
 SkinSelector::SkinSelector(QWidget *parent) :
     QMainWindow(parent),
@@ -26,11 +44,7 @@ SkinSelector::SkinSelector(QWidget *parent) :
     ui->subSkinListView->setModel(subSkinModel);
     pianoModel = new QStandardItemModel();
     ui->pianoSkinListView->setModel(pianoModel);
-#ifdef Q_OS_WINDOWS
-    globalSetting = new QSettings("ButtonMash", QSettings::IniFormat);
-#else
-    globalSetting = new QSettings("ButtonMash");
-#endif
+    globalSetting = createButtonMashSettings();
     //globalSetting->clear();
     if (globalSetting->contains("skinFolder"))
     {
@@ -46,6 +60,9 @@ SkinSelector::SkinSelector(QWidget *parent) :
     inputProvider = nullptr;
     connect(&timer, &QTimer::timeout, this, &SkinSelector::onTimerTimeout);
     inputSelector = new InputSourceSelector(this);
+    mirrorManager = new InputMirrorManager(this);
+    mirrorManager->loadSettings(*globalSetting);
+    ui->shareMirrorCheckBox->setChecked(mirrorManager->shareEnabled());
     ui->configHSButton->setVisible(false);
 }
 
@@ -219,6 +236,11 @@ void SkinSelector::on_startButton_clicked()
     if (inputSelector->delai() != 0)
         display->setDelai(inputSelector->delai());
     connect(display, &InputDisplay::closed, this, &SkinSelector::onDisplayClosed);
+    connect(inputProvider, &InputProvider::buttonPressed, mirrorManager, &InputMirrorManager::onButtonPressed);
+    connect(inputProvider, &InputProvider::buttonReleased, mirrorManager, &InputMirrorManager::onButtonReleased);
+    mirrorManager->setShareEnabled(ui->shareMirrorCheckBox->isChecked());
+    mirrorManager->saveSettings(*globalSetting);
+    mirrorManager->startSession();
     display->show();
     inputProvider->start();
     this->hide();
@@ -306,7 +328,13 @@ void SkinSelector::on_subSkinListView_clicked(const QModelIndex &index)
 void SkinSelector::onDisplayClosed()
 {
     show();
-    inputProvider->stop();
+    if (inputProvider != nullptr) {
+        disconnect(inputProvider, &InputProvider::buttonPressed, mirrorManager, &InputMirrorManager::onButtonPressed);
+        disconnect(inputProvider, &InputProvider::buttonReleased, mirrorManager, &InputMirrorManager::onButtonReleased);
+        inputProvider->stop();
+    }
+    mirrorManager->stopSession();
+    mirrorManager->saveSettings(*globalSetting);
 }
 
 void SkinSelector::on_changeSourceButton_clicked()
@@ -332,4 +360,17 @@ void SkinSelector::on_configHSButton_clicked()
     else
         ui->configFrame->show();
     hide = !hide;
+}
+
+void SkinSelector::on_shareMirrorCheckBox_toggled(bool checked)
+{
+    mirrorManager->setShareEnabled(checked);
+    mirrorManager->saveSettings(*globalSetting);
+}
+
+void SkinSelector::on_mirrorTargetsButton_clicked()
+{
+    MirrorTargetsDialog dlg(mirrorManager, this);
+    if (dlg.exec() == QDialog::Accepted)
+        mirrorManager->saveSettings(*globalSetting);
 }

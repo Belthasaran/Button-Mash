@@ -6,6 +6,7 @@
 #include "telnetconnection.h"
 #include "inputdecoder.h"
 #include "inputsourceselector.h"
+#include "inputmirrormanager.h"
 
 #include <QListView>
 #include <QMainWindow>
@@ -44,6 +45,10 @@ private slots:
 
     void on_configHSButton_clicked();
 
+    void on_shareMirrorCheckBox_toggled(bool checked);
+
+    void on_mirrorTargetsButton_clicked();
+
 private:
     Ui::SkinSelector *ui;
     QStandardItemModel* listModel;
@@ -54,6 +59,7 @@ private:
     QTimer              timer;
     RegularSkin         currentSkin;
     InputSourceSelector* inputSelector;
+    InputMirrorManager*  mirrorManager;
 
     void    setSkinPath(QString path);
     void    addSkinPath(QString path);
