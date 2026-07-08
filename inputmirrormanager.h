@@ -35,13 +35,15 @@ public:
     void startSession();
     void stopSession();
 
+    /** Little-endian remote_message: 20 bytes (18 usable + 2 pad). */
+    static QByteArray buildRetroArchPacket(InputProvider::SNESButton button, bool pressed);
+
 public slots:
     void onButtonPressed(InputProvider::SNESButton button);
     void onButtonReleased(InputProvider::SNESButton button);
 
 private:
     void sendToTargets(quint16 after, quint16 pressed, quint16 released);
-    QByteArray buildRetroArchPacket(InputProvider::SNESButton button, bool pressed) const;
 
     InputSessionLogger m_logger;
     QUdpSocket m_udp;

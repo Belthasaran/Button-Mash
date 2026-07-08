@@ -4,6 +4,7 @@
 #include <QDateTime>
 #include <QHostAddress>
 #include <QSettings>
+#include <QtEndian>
 #include <cstring>
 
 InputMirrorManager::InputMirrorManager(QObject *parent)
@@ -88,7 +89,7 @@ void InputMirrorManager::stopSession()
     m_logger.stopLogging();
 }
 
-QByteArray InputMirrorManager::buildRetroArchPacket(InputProvider::SNESButton button, bool pressed) const
+QByteArray InputMirrorManager::buildRetroArchPacket(InputProvider::SNESButton button, bool pressed)
 {
     int id = -1;
     switch (button) {
@@ -108,19 +109,14 @@ QByteArray InputMirrorManager::buildRetroArchPacket(InputProvider::SNESButton bu
     if (id < 0)
         return QByteArray();
 
-    struct {
-        qint32 port;
-        qint32 device;
-        qint32 index;
-        qint32 id;
-        quint16 state;
-    } msg;
-    msg.port = 0;
-    msg.device = 1; // JOYPAD
-    msg.index = 0;
-    msg.id = id;
-    msg.state = pressed ? 1 : 0;
-    QByteArray pkt(reinterpret_cast<const char *>(&msg), sizeof(msg));
+    // Explicit LE wire layout matching RetroArchRemotePadProvider receive
+    // (18 usable bytes; trailing 2 pad bytes for common sizeof==20 hosts).
+    QByteArray pkt(20, '\0');
+    qToLittleEndian<qint32>(0, pkt.data() + 0);       // port
+    qToLittleEndian<qint32>(1, pkt.data() + 4);       // JOYPAD
+    qToLittleEndian<qint32>(0, pkt.data() + 8);       // index
+    qToLittleEndian<qint32>(id, pkt.data() + 12);     // id
+    qToLittleEndian<quint16>(pressed ? 1 : 0, pkt.data() + 16); // state
     return pkt;
 }
 

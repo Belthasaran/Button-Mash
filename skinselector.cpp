@@ -10,6 +10,8 @@
 #include "sqpath.h"
 #include "inputmirrormanager.h"
 #include "mirrortargetsdialog.h"
+#include "inputtriggers.h"
+#include "triggersdialog.h"
 
 #include <QDir>
 #include <QProcessEnvironment>
@@ -63,6 +65,9 @@ SkinSelector::SkinSelector(QWidget *parent) :
     mirrorManager = new InputMirrorManager(this);
     mirrorManager->loadSettings(*globalSetting);
     ui->shareMirrorCheckBox->setChecked(mirrorManager->shareEnabled());
+    triggersEngine = new InputTriggersEngine(this);
+    triggersEngine->loadSettings(*globalSetting);
+    ui->inputTriggersCheckBox->setChecked(triggersEngine->enabled());
     ui->configHSButton->setVisible(false);
 }
 
@@ -238,9 +243,14 @@ void SkinSelector::on_startButton_clicked()
     connect(display, &InputDisplay::closed, this, &SkinSelector::onDisplayClosed);
     connect(inputProvider, &InputProvider::buttonPressed, mirrorManager, &InputMirrorManager::onButtonPressed);
     connect(inputProvider, &InputProvider::buttonReleased, mirrorManager, &InputMirrorManager::onButtonReleased);
+    connect(inputProvider, &InputProvider::buttonPressed, triggersEngine, &InputTriggersEngine::onButtonPressed);
+    connect(inputProvider, &InputProvider::buttonReleased, triggersEngine, &InputTriggersEngine::onButtonReleased);
     mirrorManager->setShareEnabled(ui->shareMirrorCheckBox->isChecked());
     mirrorManager->saveSettings(*globalSetting);
+    triggersEngine->setEnabled(ui->inputTriggersCheckBox->isChecked());
+    triggersEngine->saveSettings(*globalSetting);
     mirrorManager->startSession();
+    triggersEngine->startSession();
     display->show();
     inputProvider->start();
     this->hide();
@@ -331,10 +341,14 @@ void SkinSelector::onDisplayClosed()
     if (inputProvider != nullptr) {
         disconnect(inputProvider, &InputProvider::buttonPressed, mirrorManager, &InputMirrorManager::onButtonPressed);
         disconnect(inputProvider, &InputProvider::buttonReleased, mirrorManager, &InputMirrorManager::onButtonReleased);
+        disconnect(inputProvider, &InputProvider::buttonPressed, triggersEngine, &InputTriggersEngine::onButtonPressed);
+        disconnect(inputProvider, &InputProvider::buttonReleased, triggersEngine, &InputTriggersEngine::onButtonReleased);
         inputProvider->stop();
     }
+    triggersEngine->stopSession();
     mirrorManager->stopSession();
     mirrorManager->saveSettings(*globalSetting);
+    triggersEngine->saveSettings(*globalSetting);
 }
 
 void SkinSelector::on_changeSourceButton_clicked()
@@ -373,4 +387,17 @@ void SkinSelector::on_mirrorTargetsButton_clicked()
     MirrorTargetsDialog dlg(mirrorManager, this);
     if (dlg.exec() == QDialog::Accepted)
         mirrorManager->saveSettings(*globalSetting);
+}
+
+void SkinSelector::on_inputTriggersCheckBox_toggled(bool checked)
+{
+    triggersEngine->setEnabled(checked);
+    triggersEngine->saveSettings(*globalSetting);
+}
+
+void SkinSelector::on_configureTriggersButton_clicked()
+{
+    TriggersDialog dlg(triggersEngine, this);
+    if (dlg.exec() == QDialog::Accepted)
+        triggersEngine->saveSettings(*globalSetting);
 }

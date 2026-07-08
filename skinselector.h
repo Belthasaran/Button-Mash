@@ -7,6 +7,7 @@
 #include "inputdecoder.h"
 #include "inputsourceselector.h"
 #include "inputmirrormanager.h"
+#include "inputtriggers.h"
 
 #include <QListView>
 #include <QMainWindow>
@@ -49,6 +50,10 @@ private slots:
 
     void on_mirrorTargetsButton_clicked();
 
+    void on_inputTriggersCheckBox_toggled(bool checked);
+
+    void on_configureTriggersButton_clicked();
+
 private:
     Ui::SkinSelector *ui;
     QStandardItemModel* listModel;
@@ -60,6 +65,7 @@ private:
     RegularSkin         currentSkin;
     InputSourceSelector* inputSelector;
     InputMirrorManager*  mirrorManager;
+    InputTriggersEngine* triggersEngine;
 
     void    setSkinPath(QString path);
     void    addSkinPath(QString path);

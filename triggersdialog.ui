@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TriggersDialog</class>
+ <widget class="QDialog" name="TriggersDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>720</width>
+    <height>520</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Configure Input Triggers</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="infoLabel">
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Keyboard maps only inject while a matching window is focused. If focus is lost, all held mapped keys are released. Macro actions (Run program) fire on button press regardless of focus. RetroArch exclusivity is configured by you — see help text below.</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="focusGroup">
+     <property name="title">
+      <string>Focus windows (keyboard maps)</string>
+     </property>
+     <layout class="QVBoxLayout" name="focusLayout">
+      <item>
+       <widget class="QLabel" name="titleHint">
+        <property name="text">
+         <string>Window title substrings (one per line, case-insensitive):</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="windowTitlesEdit">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>80</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="classHint">
+        <property name="text">
+         <string>Window class substrings (Windows; one per line):</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="windowClassesEdit">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>60</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="linuxGamepadCheck">
+     <property name="text">
+      <string>Linux: also expose a virtual gamepad via uinput (Button Mash Gamepad)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="bindHint">
+     <property name="text">
+      <string>Bindings (SNES button or Extra → Keyboard keyCode / Run program):</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="bindingsTable">
+     <property name="columnCount">
+      <number>6</number>
+     </property>
+     <column>
+      <property name="text">
+       <string>Source</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Action</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Key code</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Key label</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Program</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Args</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="extraBtnRow">
+     <item>
+      <widget class="QPushButton" name="addExtraButton">
+       <property name="text">
+        <string>Add Extra / Macro row</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="removeExtraButton">
+       <property name="text">
+        <string>Remove selected</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="extraSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="setupHint">
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>User setup: For Network RetroPad, enable it in RetroArch and point Share→Mirror Target RetroArchRemotePad at 127.0.0.1:55400. For keyboard, bind RetroArch keys to match Key label/codes. On Linux, grant /dev/uinput (udev rule GROUP=input). This dialog does not change RetroArch for you.</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>TriggersDialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>TriggersDialog</receiver>
+   <slot>reject()</slot>
+  </connection>
+ </connections>
+</ui>

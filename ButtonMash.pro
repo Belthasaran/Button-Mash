@@ -24,7 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 win32 {
-    LIBS += -ldinput8 -ldxguid
+    LIBS += -ldinput8 -ldxguid -luser32
     CONFIG += c++11
     SOURCES +=  QGameController/src/gamecontroller/qgamecontroller.cpp
     SOURCES +=  QGameController/src/gamecontroller/qgamecontroller_win.cpp
@@ -61,7 +61,10 @@ SOURCES += \
         inputsessionlogger.cpp \
         sessioncrypto.cpp \
         inputmirrormanager.cpp \
-        mirrortargetsdialog.cpp
+        mirrortargetsdialog.cpp \
+        inputtriggers.cpp \
+        triggersdialog.cpp \
+        uinputdevice.cpp
 
 HEADERS += \
         skinselector.h \
@@ -90,6 +93,9 @@ HEADERS += \
         sessioncrypto.h \
         inputmirrormanager.h \
         mirrortargetsdialog.h \
+        inputtriggers.h \
+        triggersdialog.h \
+        uinputdevice.h \
         third_party/xxhash.h
 
 FORMS += \
@@ -99,7 +105,8 @@ FORMS += \
         mapbuttondialog.ui \
         configurationdialog.ui \
         skineditor.ui \
-        mirrortargetsdialog.ui
+        mirrortargetsdialog.ui \
+        triggersdialog.ui
 
 INCLUDEPATH += $$PWD
 
