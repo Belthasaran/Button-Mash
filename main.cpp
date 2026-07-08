@@ -1,4 +1,3 @@
-#include "skineditor.h"
 #include "skinselector.h"
 #include <QApplication>
 

@@ -24,6 +24,19 @@
      </rect>
     </property>
    </widget>
+   <widget class="QPushButton" name="skinEditorButton">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>470</y>
+      <width>131</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Skin Editor</string>
+    </property>
+   </widget>
    <widget class="QPushButton" name="startButton">
     <property name="enabled">
      <bool>false</bool>

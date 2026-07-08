@@ -14,6 +14,8 @@
 #include "triggersdialog.h"
 
 #include <QDir>
+#include <QProcess>
+#include <QProcessEnvironment>
 #include <QProcessEnvironment>
 #include <QShortcut>
 #include <QStandardItemModel>
@@ -400,4 +402,34 @@ void SkinSelector::on_configureTriggersButton_clicked()
     TriggersDialog dlg(triggersEngine, this);
     if (dlg.exec() == QDialog::Accepted)
         triggersEngine->saveSettings(*globalSetting);
+}
+
+void SkinSelector::on_skinEditorButton_clicked()
+{
+    QString editor = QCoreApplication::applicationDirPath() + QStringLiteral("/MashEditor");
+#ifdef Q_OS_WIN
+    editor += QStringLiteral(".exe");
+#endif
+    if (!QFileInfo::exists(editor)) {
+        const QString alt = QCoreApplication::applicationDirPath()
+                          + QStringLiteral("/../build-mash/MashEditor");
+        if (QFileInfo::exists(alt))
+            editor = alt;
+    }
+    if (!QFileInfo::exists(editor)) {
+        QMessageBox::warning(this, tr("Skin Editor"),
+                             tr("MashEditor not found at %1").arg(editor));
+        return;
+    }
+    QStringList args;
+    args << QStringLiteral("--skins-dir") << ui->skinPathEdit->text();
+    const QModelIndex idx = ui->skinListView->currentIndex();
+    if (idx.isValid()) {
+        const RegularSkin sk = idx.data(Qt::UserRole + 2).value<RegularSkin>();
+        if (!sk.file.isEmpty())
+            args << QStringLiteral("--skin") << QFileInfo(sk.file).absoluteDir().dirName();
+    }
+    if (!QProcess::startDetached(editor, args)) {
+        QMessageBox::warning(this, tr("Skin Editor"), tr("Failed to start MashEditor."));
+    }
 }

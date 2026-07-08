@@ -54,6 +54,8 @@ private slots:
 
     void on_configureTriggersButton_clicked();
 
+    void on_skinEditorButton_clicked();
+
 private:
     Ui::SkinSelector *ui;
     QStandardItemModel* listModel;

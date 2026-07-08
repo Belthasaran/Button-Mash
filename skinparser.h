@@ -2,59 +2,74 @@
 #define SKINPARSER_H
 
 #include <QColor>
+#include <QDebug>
+#include <QList>
 #include <QMap>
 #include <QString>
-#include <QDebug>
 
-struct   RegularButtonSkin
+struct RegularButtonSkin
 {
     QString name;
     QString image;
-    int x;
-    int y;
-    int width;
-    int height;
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
 };
 
-QDebug              operator<<(QDebug debug, const RegularButtonSkin& but);
+QDebug operator<<(QDebug debug, const RegularButtonSkin &but);
 
-struct   RegularSkin
+struct RegularSkin
 {
     QString file;
     QString name;
     QString author;
+    QString type = QStringLiteral("snes");
     QString background;
+    QString backgroundName;
     QList<RegularSkin> subSkins;
-    QMap<QString, RegularButtonSkin>    buttons;
+    QMap<QString, RegularButtonSkin> buttons;
 };
 
 Q_DECLARE_METATYPE(RegularSkin)
 
-QDebug              operator<<(QDebug debug, const RegularSkin& req);
+QDebug operator<<(QDebug debug, const RegularSkin &req);
 
 struct PianoButton
 {
     QString name;
-    int x;
-    int width;
-    QColor  color;
+    int x = 0;
+    int width = 20;
+    QColor color = Qt::gray;
 };
 
-QDebug              operator<<(QDebug debug, const PianoButton& pb);
+QDebug operator<<(QDebug debug, const PianoButton &pb);
 
-struct  PianoSkin
+struct PianoLabelArea
+{
+    QColor bgcolor = Qt::black;
+    int width = 400;
+    int height = 30;
+    QString fontName = QStringLiteral("DejaVu Sans Mono");
+    bool fontBold = true;
+    int fontSize = 12;
+};
+
+struct PianoSkin
 {
     QString file;
     QString name;
     QString author;
-    QColor  bgcolor;
+    QString type = QStringLiteral("pianodisplay");
+    QColor bgcolor = Qt::black;
     QString background;
-    int     width;
-    int     height;
-    QMap<QString, PianoButton>  buttons;
+    int width = 400;
+    int height = 200;
+    PianoLabelArea labelArea;
+    QMap<QString, PianoButton> buttons;
 };
 
-QDebug              operator<<(QDebug debug, const PianoSkin& pk);
+QDebug operator<<(QDebug debug, const PianoSkin &pk);
 
 Q_DECLARE_METATYPE(PianoSkin)
 
@@ -62,12 +77,11 @@ class SkinParser
 {
 public:
     SkinParser();
-    static RegularSkin          parseRegularSkin(QString filePath);
-    static PianoSkin            parsePianoSkin(QString filePath);
-    static  QString             xmlError;
-    static  int                 lineNumber;
-    static  int                 columNumber;
+    static RegularSkin parseRegularSkin(const QString &filePath, bool requireImages = true);
+    static PianoSkin parsePianoSkin(const QString &filePath);
+    static QString xmlError;
+    static int lineNumber;
+    static int columNumber;
 };
-
 
 #endif // SKINPARSER_H

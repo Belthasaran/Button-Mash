@@ -51,7 +51,6 @@ SOURCES += \
         usb2snes.cpp \
         snesclassictelnet.cpp \
         configurationdialog.cpp \
-        skineditor.cpp \
         localcontroller.cpp \
         localcontrollermanager.cpp \
         snesbitorder.cpp \
@@ -81,7 +80,6 @@ HEADERS += \
         usb2snes.h \
         snesclassictelnet.h \
         configurationdialog.h \
-        skineditor.h \
         localcontroller.h \
         localcontrollermanager.h \
         sqpath.h \
@@ -104,7 +102,6 @@ FORMS += \
         inputsourceselector.ui \
         mapbuttondialog.ui \
         configurationdialog.ui \
-        skineditor.ui \
         mirrortargetsdialog.ui \
         triggersdialog.ui
 
