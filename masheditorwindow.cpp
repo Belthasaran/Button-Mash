@@ -54,9 +54,10 @@ void MashEditorWindow::buildUi()
     });
 
     m_chkAll = new QCheckBox(tr("All"));
-    m_chkAll->setChecked(true);
+    m_chkAll->setTristate(true);
+    m_chkAll->setCheckState(Qt::Checked);
     viewBar->addWidget(m_chkAll);
-    connect(m_chkAll, &QCheckBox::toggled, this, &MashEditorWindow::onPreviewToggled);
+    connect(m_chkAll, &QCheckBox::stateChanged, this, &MashEditorWindow::onAllPreviewToggled);
 
     const struct { const char *label; const char *name; } btns[] = {
         {"B", "b"}, {"A", "a"}, {"X", "x"}, {"Y", "y"}, {"L", "l"}, {"R", "r"},
@@ -68,7 +69,7 @@ void MashEditorWindow::buildUi()
         cb->setChecked(true);
         m_previewChks[QString::fromUtf8(b.name)] = cb;
         viewBar->addWidget(cb);
-        connect(cb, &QCheckBox::toggled, this, &MashEditorWindow::onPreviewToggled);
+        connect(cb, &QCheckBox::toggled, this, &MashEditorWindow::onIndividualPreviewToggled);
     }
     viewBar->addStretch();
     rootLay->addLayout(viewBar);
@@ -78,19 +79,23 @@ void MashEditorWindow::buildUi()
     auto *palette = new QWidget;
     auto *palLay = new QVBoxLayout(palette);
     palLay->addWidget(new QLabel(tr("Tools")));
-    auto *ptrBtn = new QPushButton(tr("Pointer"));
-    auto *placeBtn = new QPushButton(tr("Place button"));
-    ptrBtn->setCheckable(true);
-    placeBtn->setCheckable(true);
-    ptrBtn->setChecked(true);
-    palLay->addWidget(ptrBtn);
-    palLay->addWidget(placeBtn);
-    connect(ptrBtn, &QPushButton::clicked, this, &MashEditorWindow::onToolPointer);
-    connect(placeBtn, &QPushButton::clicked, this, &MashEditorWindow::onToolPlace);
-    palLay->addWidget(new QLabel(tr("Assets")));
+    m_ptrBtn = new QPushButton(tr("Pointer"));
+    m_placeBtn = new QPushButton(tr("Place button"));
+    m_bgBtn = new QPushButton(tr("Set background"));
+    m_ptrBtn->setCheckable(true);
+    m_placeBtn->setCheckable(true);
+    m_bgBtn->setCheckable(true);
+    m_ptrBtn->setChecked(true);
+    palLay->addWidget(m_ptrBtn);
+    palLay->addWidget(m_placeBtn);
+    palLay->addWidget(m_bgBtn);
+    connect(m_ptrBtn, &QPushButton::clicked, this, &MashEditorWindow::onToolPointer);
+    connect(m_placeBtn, &QPushButton::clicked, this, &MashEditorWindow::onToolPlace);
+    connect(m_bgBtn, &QPushButton::clicked, this, &MashEditorWindow::onToolSetBackground);
+    palLay->addWidget(new QLabel(tr("Layers / Assets")));
     m_assetList = new QListWidget;
     m_assetList->setMaximumWidth(140);
-    connect(m_assetList, &QListWidget::itemClicked, this, &MashEditorWindow::onAssetSelected);
+    connect(m_assetList, &QListWidget::itemClicked, this, &MashEditorWindow::onPaletteItemClicked);
     palLay->addWidget(m_assetList);
     palLay->addStretch();
     body->addWidget(palette);
@@ -109,10 +114,12 @@ void MashEditorWindow::buildUi()
     m_inspW = new QSpinBox;
     m_inspH = new QSpinBox;
     m_inspColor = new QLineEdit;
+    m_inspBrowse = new QPushButton(tr("Browse…"));
     for (QSpinBox *sb : {m_inspX, m_inspY, m_inspW, m_inspH})
         sb->setRange(0, 4096);
     m_inspectorForm->addRow(tr("Name"), m_inspName);
     m_inspectorForm->addRow(tr("Image"), m_inspImage);
+    m_inspectorForm->addRow(QString(), m_inspBrowse);
     m_inspectorForm->addRow(tr("X"), m_inspX);
     m_inspectorForm->addRow(tr("Y"), m_inspY);
     m_inspectorForm->addRow(tr("Width"), m_inspW);
@@ -120,6 +127,7 @@ void MashEditorWindow::buildUi()
     m_inspectorForm->addRow(tr("Color"), m_inspColor);
     connect(m_inspName, &QLineEdit::editingFinished, this, &MashEditorWindow::onInspectorChanged);
     connect(m_inspImage, &QLineEdit::editingFinished, this, &MashEditorWindow::onInspectorChanged);
+    connect(m_inspBrowse, &QPushButton::clicked, this, &MashEditorWindow::onBrowseImage);
     connect(m_inspX, QOverload<int>::of(&QSpinBox::valueChanged), this, &MashEditorWindow::onInspectorChanged);
     connect(m_inspY, QOverload<int>::of(&QSpinBox::valueChanged), this, &MashEditorWindow::onInspectorChanged);
     connect(m_inspW, QOverload<int>::of(&QSpinBox::valueChanged), this, &MashEditorWindow::onInspectorChanged);
@@ -175,7 +183,7 @@ bool MashEditorWindow::openSkinDir(const QString &skinDir, MashEditMode initialM
     }
     syncCanvasFromModel();
     refreshAssetList();
-    onPreviewToggled();
+    m_canvas->setPreviewButtons(activePreviewSet());
     setWindowTitle(QStringLiteral("MashEditor — %1").arg(QFileInfo(skinDir).fileName()));
     return true;
 }
@@ -244,12 +252,6 @@ void MashEditorWindow::onCanvasModelChanged()
 
 QSet<QString> MashEditorWindow::activePreviewSet() const
 {
-    if (m_chkAll->isChecked()) {
-        QSet<QString> all;
-        for (auto it = m_previewChks.constBegin(); it != m_previewChks.constEnd(); ++it)
-            all.insert(it.key());
-        return all;
-    }
     QSet<QString> s;
     for (auto it = m_previewChks.constBegin(); it != m_previewChks.constEnd(); ++it) {
         if (it.value()->isChecked())
@@ -258,12 +260,42 @@ QSet<QString> MashEditorWindow::activePreviewSet() const
     return s;
 }
 
-void MashEditorWindow::onPreviewToggled()
+void MashEditorWindow::syncAllCheckboxFromIndividuals()
 {
-    if (m_chkAll->isChecked()) {
-        for (auto *cb : m_previewChks)
-            cb->setChecked(true);
+    if (m_updatingPreview)
+        return;
+    int checked = 0;
+    for (auto *cb : m_previewChks) {
+        if (cb->isChecked())
+            ++checked;
     }
+    m_updatingPreview = true;
+    if (checked == 0)
+        m_chkAll->setCheckState(Qt::Unchecked);
+    else if (checked == m_previewChks.size())
+        m_chkAll->setCheckState(Qt::Checked);
+    else
+        m_chkAll->setCheckState(Qt::PartiallyChecked);
+    m_updatingPreview = false;
+}
+
+void MashEditorWindow::onIndividualPreviewToggled()
+{
+    syncAllCheckboxFromIndividuals();
+    m_canvas->setPreviewButtons(activePreviewSet());
+}
+
+void MashEditorWindow::onAllPreviewToggled(int state)
+{
+    if (m_updatingPreview)
+        return;
+    if (state == Qt::PartiallyChecked)
+        return;
+    m_updatingPreview = true;
+    const bool on = (state == Qt::Checked);
+    for (auto *cb : m_previewChks)
+        cb->setChecked(on);
+    m_updatingPreview = false;
     m_canvas->setPreviewButtons(activePreviewSet());
 }
 
@@ -280,15 +312,23 @@ void MashEditorWindow::onCanvasSelection(const QString &key)
     refreshInspector();
 }
 
-void MashEditorWindow::refreshInspector()
+void MashEditorWindow::setInspectorFieldsForBackground()
 {
-    m_updatingInspector = true;
-    const QString sel = m_canvas->selectedObjectKey();
-    if (!sel.startsWith(QLatin1String("button:"))) {
-        m_updatingInspector = false;
-        return;
-    }
-    const QString name = sel.mid(7);
+    const RegularSkin *v = m_model.activeRegularVariant();
+    m_inspName->setText(v->backgroundName.isEmpty() ? QStringLiteral("Default") : v->backgroundName);
+    m_inspImage->setText(v->background);
+    m_inspName->setEnabled(true);
+    m_inspImage->setEnabled(true);
+    m_inspBrowse->setEnabled(true);
+    m_inspX->setEnabled(false);
+    m_inspY->setEnabled(false);
+    m_inspW->setEnabled(false);
+    m_inspH->setEnabled(false);
+    m_inspColor->setEnabled(false);
+}
+
+void MashEditorWindow::setInspectorFieldsForButton(const QString &name)
+{
     if (m_model.mode == MashEditMode::Regular) {
         const RegularButtonSkin b = m_model.activeRegularVariant()->buttons.value(name);
         m_inspName->setText(b.name);
@@ -297,7 +337,13 @@ void MashEditorWindow::refreshInspector()
         m_inspY->setValue(b.y);
         m_inspW->setValue(b.width);
         m_inspH->setValue(b.height);
+        m_inspName->setEnabled(true);
         m_inspImage->setEnabled(true);
+        m_inspBrowse->setEnabled(true);
+        m_inspX->setEnabled(true);
+        m_inspY->setEnabled(true);
+        m_inspW->setEnabled(true);
+        m_inspH->setEnabled(true);
         m_inspColor->setEnabled(false);
     } else {
         const PianoButton b = m_model.piano.buttons.value(name);
@@ -305,11 +351,31 @@ void MashEditorWindow::refreshInspector()
         m_inspX->setValue(b.x);
         m_inspW->setValue(b.width);
         m_inspColor->setText(b.color.name());
+        m_inspName->setEnabled(true);
         m_inspImage->setEnabled(false);
+        m_inspBrowse->setEnabled(false);
         m_inspY->setEnabled(false);
         m_inspH->setEnabled(false);
+        m_inspX->setEnabled(true);
+        m_inspW->setEnabled(true);
         m_inspColor->setEnabled(true);
     }
+}
+
+void MashEditorWindow::refreshInspector()
+{
+    m_updatingInspector = true;
+    const QString sel = m_canvas->selectedObjectKey();
+    if (sel == m_model.canvasBackgroundKey() && m_model.mode == MashEditMode::Regular) {
+        setInspectorFieldsForBackground();
+        m_updatingInspector = false;
+        return;
+    }
+    if (!sel.startsWith(QLatin1String("button:"))) {
+        m_updatingInspector = false;
+        return;
+    }
+    setInspectorFieldsForButton(sel.mid(7));
     m_updatingInspector = false;
 }
 
@@ -318,6 +384,14 @@ void MashEditorWindow::applyInspectorToModel()
     if (m_updatingInspector)
         return;
     const QString sel = m_canvas->selectedObjectKey();
+    if (sel == m_model.canvasBackgroundKey() && m_model.mode == MashEditMode::Regular) {
+        RegularSkin *v = m_model.activeRegularVariant();
+        v->backgroundName = m_inspName->text().trimmed();
+        v->background = m_inspImage->text().trimmed();
+        m_model.dirtyRegular = true;
+        syncCanvasFromModel();
+        return;
+    }
     if (!sel.startsWith(QLatin1String("button:")))
         return;
     const QString oldName = sel.mid(7);
@@ -347,6 +421,18 @@ void MashEditorWindow::applyInspectorToModel()
         m_model.dirtyPiano = true;
     }
     syncCanvasFromModel();
+}
+
+void MashEditorWindow::onBrowseImage()
+{
+    if (m_model.skinDir.isEmpty())
+        return;
+    const QString picked = QFileDialog::getOpenFileName(
+        this, tr("Choose image"), m_model.skinDir, tr("Images (*.png *.jpg *.gif)"));
+    if (picked.isEmpty())
+        return;
+    m_inspImage->setText(QFileInfo(picked).fileName());
+    onInspectorChanged();
 }
 
 void MashEditorWindow::onInspectorChanged()
@@ -448,30 +534,60 @@ void MashEditorWindow::onImportAsset()
 void MashEditorWindow::refreshAssetList()
 {
     m_assetList->clear();
+    if (m_model.mode == MashEditMode::Regular) {
+        auto *bgItem = new QListWidgetItem(tr("[ Background ]"));
+        bgItem->setData(Qt::UserRole, QStringLiteral("layer:background"));
+        m_assetList->addItem(bgItem);
+    }
     if (m_model.skinDir.isEmpty())
         return;
     const QDir dir(m_model.skinDir);
     const QStringList imgs = dir.entryList({QStringLiteral("*.png"), QStringLiteral("*.gif"),
                                             QStringLiteral("*.jpg")},
                                            QDir::Files, QDir::Name);
-    for (const QString &f : imgs)
-        m_assetList->addItem(f);
+    for (const QString &f : imgs) {
+        auto *item = new QListWidgetItem(f);
+        item->setData(Qt::UserRole, QStringLiteral("asset"));
+        m_assetList->addItem(item);
+    }
 }
 
 void MashEditorWindow::onToolPointer()
 {
+    m_ptrBtn->setChecked(true);
+    m_placeBtn->setChecked(false);
+    m_bgBtn->setChecked(false);
     m_canvas->setTool(MashEditorCanvas::Tool::Pointer);
 }
 
 void MashEditorWindow::onToolPlace()
 {
+    m_ptrBtn->setChecked(false);
+    m_placeBtn->setChecked(true);
+    m_bgBtn->setChecked(false);
     m_canvas->setTool(MashEditorCanvas::Tool::PlaceButton);
 }
 
-void MashEditorWindow::onAssetSelected(QListWidgetItem *item)
+void MashEditorWindow::onToolSetBackground()
 {
-    if (item)
-        m_canvas->setPlaceAsset(item->text());
+    m_ptrBtn->setChecked(false);
+    m_placeBtn->setChecked(false);
+    m_bgBtn->setChecked(true);
+    m_canvas->setTool(MashEditorCanvas::Tool::SetBackground);
+}
+
+void MashEditorWindow::onPaletteItemClicked(QListWidgetItem *item)
+{
+    if (!item)
+        return;
+    const QString role = item->data(Qt::UserRole).toString();
+    if (role == QLatin1String("layer:background")) {
+        onToolPointer();
+        m_canvas->selectObjectByKey(m_model.canvasBackgroundKey());
+        refreshInspector();
+        return;
+    }
+    m_canvas->setPlaceAsset(item->text());
 }
 
 void MashEditorWindow::onSubSkinChanged(int idx)
@@ -484,6 +600,7 @@ void MashEditorWindow::onSubSkinChanged(int idx)
     }
     m_model.activeSubSkin = idx;
     syncCanvasFromModel();
+    refreshInspector();
 }
 
 void MashEditorWindow::onProperties()
@@ -567,7 +684,9 @@ void MashEditorWindow::onModeChanged(int idx)
     }
     m_model.mode = (idx == 0) ? MashEditMode::Regular : MashEditMode::Piano;
     m_subSkinCombo->setVisible(m_model.mode == MashEditMode::Regular && !m_model.regular.subSkins.isEmpty());
+    m_bgBtn->setVisible(m_model.mode == MashEditMode::Regular);
     syncCanvasFromModel();
+    refreshAssetList();
 }
 
 void MashEditorWindow::onZoomIn() { m_canvas->zoomBy(1.2); }

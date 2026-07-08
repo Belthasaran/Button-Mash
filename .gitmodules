@@ -1,0 +1,3 @@
+[submodule "photoshopapi"]
+	path = photoshopapi
+	url = https://github.com/EmilDohne/PhotoshopAPI.git

@@ -34,6 +34,76 @@ void MashEditorModel::loadFromDir(const QString &dir)
         piano.name = QFileInfo(skinDir).fileName();
         piano.author = QStringLiteral("MashEditor");
     }
+    snapshotLoadedKeys();
+}
+
+QString MashEditorModel::regularBackgroundKeyForVariant(const RegularSkin &variant) const
+{
+    if (!regular.subSkins.isEmpty()) {
+        const QString vname = variant.backgroundName.isEmpty() ? variant.name : variant.backgroundName;
+        return QStringLiteral("background:") + vname;
+    }
+    return QStringLiteral("background");
+}
+
+QString MashEditorModel::regularBackgroundKey() const
+{
+    return regularBackgroundKeyForVariant(*activeRegularVariant());
+}
+
+QString MashEditorModel::regularButtonKey(const QString &name) const
+{
+    return QStringLiteral("button:") + name;
+}
+
+QString MashEditorModel::pianoMainareaKey() const
+{
+    return QStringLiteral("mainarea");
+}
+
+QString MashEditorModel::pianoButtonKey(const QString &name) const
+{
+    return QStringLiteral("button:") + name;
+}
+
+QString MashEditorModel::canvasBackgroundKey() const
+{
+    return QStringLiteral("background");
+}
+
+bool MashEditorModel::isObjectLocked(const QString &key) const
+{
+    const auto &map = (mode == MashEditMode::Regular) ? metadata.regularObjects : metadata.pianoObjects;
+    const auto &loaded = (mode == MashEditMode::Regular) ? loadedRegularKeys : loadedPianoKeys;
+    if (map.contains(key))
+        return map.value(key).locked;
+    if (loaded.contains(key))
+        return true;
+    return false;
+}
+
+void MashEditorModel::snapshotLoadedKeys()
+{
+    loadedRegularKeys.clear();
+    loadedPianoKeys.clear();
+
+    auto snapshotVariant = [this](const RegularSkin &v) {
+        if (!v.background.isEmpty())
+            loadedRegularKeys.insert(regularBackgroundKeyForVariant(v));
+        for (auto it = v.buttons.constBegin(); it != v.buttons.constEnd(); ++it)
+            loadedRegularKeys.insert(regularButtonKey(it.key()));
+    };
+
+    if (regular.subSkins.isEmpty()) {
+        snapshotVariant(regular);
+    } else {
+        for (const RegularSkin &v : regular.subSkins)
+            snapshotVariant(v);
+    }
+
+    loadedPianoKeys.insert(pianoMainareaKey());
+    for (auto it = piano.buttons.constBegin(); it != piano.buttons.constEnd(); ++it)
+        loadedPianoKeys.insert(pianoButtonKey(it.key()));
 }
 
 RegularSkin *MashEditorModel::activeRegularVariant()

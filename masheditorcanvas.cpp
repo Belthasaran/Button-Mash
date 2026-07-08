@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsRectItem>
+#include <QFileDialog>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMouseEvent>
@@ -63,6 +64,7 @@ void MashEditorCanvas::setViewMode(ViewMode m)
 {
     m_viewMode = m;
     updateItemVisuals();
+    updateSelectionOutline();
 }
 
 void MashEditorCanvas::setPreviewButtons(const QSet<QString> &names)
@@ -86,9 +88,7 @@ bool MashEditorCanvas::isLocked(const QString &key) const
 {
     if (!m_model)
         return false;
-    const auto &map = (m_model->mode == MashEditMode::Regular) ? m_model->metadata.regularObjects
-                                                                : m_model->metadata.pianoObjects;
-    return map.value(key).locked;
+    return m_model->isObjectLocked(key);
 }
 
 void MashEditorCanvas::setLocked(const QString &key, bool locked)
@@ -106,6 +106,7 @@ void MashEditorCanvas::clearSelection()
 {
     m_selectedKey.clear();
     m_selectedItem = nullptr;
+    updateSelectionOutline();
     emit selectionChanged(QString());
 }
 
@@ -118,6 +119,29 @@ void MashEditorCanvas::selectItem(QGraphicsItem *item, const QString &key)
         if (gi->data(1).toString() == QLatin1String("handle"))
             gi->setVisible(m_viewMode == ViewMode::Edit && gi->parentItem() == item);
     }
+    updateSelectionOutline();
+}
+
+void MashEditorCanvas::selectObjectByKey(const QString &key)
+{
+    if (m_itemMap.contains(key))
+        selectItem(m_itemMap[key], key);
+}
+
+void MashEditorCanvas::updateSelectionOutline()
+{
+    if (m_selectionOutline) {
+        scene()->removeItem(m_selectionOutline);
+        delete m_selectionOutline;
+        m_selectionOutline = nullptr;
+    }
+    if (!m_selectedItem || m_viewMode != ViewMode::Edit)
+        return;
+    QRectF r = m_selectedItem->boundingRect();
+    r.translate(m_selectedItem->pos());
+    m_selectionOutline = scene()->addRect(r, QPen(QColor(0, 120, 255), 1, Qt::DashLine));
+    m_selectionOutline->setZValue(200);
+    m_selectionOutline->setFlag(QGraphicsItem::ItemIsSelectable, false);
 }
 
 void MashEditorCanvas::rebuildScene()
@@ -126,6 +150,7 @@ void MashEditorCanvas::rebuildScene()
         return;
     scene()->clear();
     m_itemMap.clear();
+    m_selectionOutline = nullptr;
     clearSelection();
 
     if (m_model->mode == MashEditMode::Regular) {
@@ -138,8 +163,8 @@ void MashEditorCanvas::rebuildScene()
             scene()->setSceneRect(0, 0, bg.width(), bg.height());
             auto *bgItem = scene()->addPixmap(bg);
             bgItem->setZValue(0);
-            bgItem->setData(2, QStringLiteral("background"));
-            m_itemMap[QStringLiteral("background")] = bgItem;
+            bgItem->setData(2, m_model->canvasBackgroundKey());
+            m_itemMap[m_model->canvasBackgroundKey()] = bgItem;
         } else {
             scene()->setSceneRect(0, 0, 240, 121);
         }
@@ -189,7 +214,7 @@ void MashEditorCanvas::updateItemVisuals()
             continue;
         const QString btnName = key.mid(7);
         QGraphicsItem *gi = it.value();
-        const bool active = m_previewButtons.isEmpty() || m_previewButtons.contains(btnName);
+        const bool active = m_previewButtons.contains(btnName);
         if (m_viewMode == ViewMode::Preview) {
             gi->setVisible(active);
             gi->setOpacity(1.0);
@@ -280,6 +305,18 @@ void MashEditorCanvas::wheelEvent(QWheelEvent *event)
     QGraphicsView::wheelEvent(event);
 }
 
+void MashEditorCanvas::setBackgroundFromAsset(const QString &assetFile)
+{
+    if (!m_model || m_model->mode != MashEditMode::Regular)
+        return;
+    RegularSkin *v = m_model->activeRegularVariant();
+    v->background = assetFile;
+    m_model->dirtyRegular = true;
+    rebuildScene();
+    selectObjectByKey(m_model->canvasBackgroundKey());
+    emit modelChanged();
+}
+
 void MashEditorCanvas::placeNewButtonAt(const QPointF &sp)
 {
     if (!m_model)
@@ -327,19 +364,24 @@ void MashEditorCanvas::placeNewButtonAt(const QPointF &sp)
     emit modelChanged();
 }
 
-void MashEditorCanvas::bringToFront(const QString &key)
+void MashEditorCanvas::bringToFront(const QString &metaKey)
 {
-    if (!m_model || !m_itemMap.contains(key))
+    if (!m_model)
+        return;
+    QString canvasKey = metaKey;
+    if (metaKey.startsWith(QLatin1String("background")))
+        canvasKey = m_model->canvasBackgroundKey();
+    if (!m_itemMap.contains(canvasKey))
         return;
     qreal maxZ = 10;
     for (QGraphicsItem *gi : m_itemMap)
         maxZ = qMax(maxZ, gi->zValue());
-    m_itemMap[key]->setZValue(maxZ + 1);
+    m_itemMap[canvasKey]->setZValue(maxZ + 1);
     auto &map = (m_model->mode == MashEditMode::Regular) ? m_model->metadata.regularObjects
                                                           : m_model->metadata.pianoObjects;
-    ObjectMeta om = map.value(key);
+    ObjectMeta om = map.value(metaKey);
     om.zIndex = int(maxZ + 1);
-    map[key] = om;
+    map[metaKey] = om;
 }
 
 void MashEditorCanvas::mousePressEvent(QMouseEvent *event)
@@ -349,6 +391,20 @@ void MashEditorCanvas::mousePressEvent(QMouseEvent *event)
         return;
     }
     const QPointF sp = mapToScene(event->pos());
+    if (m_tool == Tool::SetBackground && event->button() == Qt::LeftButton
+        && m_model->mode == MashEditMode::Regular) {
+        QString asset = m_placeAsset;
+        if (asset.isEmpty()) {
+            const QString picked = QFileDialog::getOpenFileName(
+                this, tr("Background image"), m_model->skinDir,
+                tr("Images (*.png *.jpg *.gif)"));
+            if (picked.isEmpty())
+                return;
+            asset = QFileInfo(picked).fileName();
+        }
+        setBackgroundFromAsset(asset);
+        return;
+    }
     if (m_tool == Tool::PlaceButton && event->button() == Qt::LeftButton) {
         placeNewButtonAt(sp);
         return;
@@ -365,21 +421,38 @@ void MashEditorCanvas::mousePressEvent(QMouseEvent *event)
         return;
     }
     if (hit && hit->data(2).isValid()) {
-        selectItem(hit, hit->data(2).toString());
-        if (!isLocked(m_selectedKey)) {
+        const QString key = hit->data(2).toString();
+        selectItem(hit, key);
+        const QString metaKey = (key == m_model->canvasBackgroundKey())
+                                    ? m_model->regularBackgroundKey()
+                                    : key;
+        if (key != m_model->canvasBackgroundKey() && !isLocked(metaKey)) {
             m_dragging = true;
             m_dragStartScene = sp;
             m_itemStartPos = hit->pos();
         }
         return;
     }
+    if (m_tool == Tool::Pointer && m_model->mode == MashEditMode::Regular
+        && m_itemMap.contains(m_model->canvasBackgroundKey())) {
+        selectObjectByKey(m_model->canvasBackgroundKey());
+        return;
+    }
     clearSelection();
+    updateSelectionOutline();
     QGraphicsView::mousePressEvent(event);
 }
 
 void MashEditorCanvas::mouseMoveEvent(QMouseEvent *event)
 {
-    if (!m_model || m_viewMode != ViewMode::Edit || !m_selectedItem || isLocked(m_selectedKey)) {
+    if (!m_model || m_viewMode != ViewMode::Edit || !m_selectedItem) {
+        QGraphicsView::mouseMoveEvent(event);
+        return;
+    }
+    const QString metaKey = (m_selectedKey == m_model->canvasBackgroundKey())
+                                ? m_model->regularBackgroundKey()
+                                : m_selectedKey;
+    if (isLocked(metaKey)) {
         QGraphicsView::mouseMoveEvent(event);
         return;
     }
@@ -442,18 +515,23 @@ void MashEditorCanvas::contextMenuEvent(QContextMenuEvent *event)
     if (!hit || !hit->data(2).isValid())
         return;
     const QString key = hit->data(2).toString();
+    const QString metaKey = (key == m_model->canvasBackgroundKey()) ? m_model->regularBackgroundKey() : key;
     QMenu menu(this);
-    QAction *lockAct = menu.addAction(isLocked(key) ? tr("Unlock") : tr("Lock"));
-    QAction *frontAct = menu.addAction(tr("Bring to front"));
-    QAction *delAct = menu.addAction(tr("Delete"));
+    QAction *lockAct = menu.addAction(isLocked(metaKey) ? tr("Unlock") : tr("Lock"));
+    QAction *frontAct = nullptr;
+    QAction *delAct = nullptr;
+    if (key.startsWith(QLatin1String("button:"))) {
+        frontAct = menu.addAction(tr("Bring to front"));
+        delAct = menu.addAction(tr("Delete"));
+    }
     QAction *chosen = menu.exec(event->globalPos());
     if (!chosen)
         return;
     if (chosen == lockAct) {
-        setLocked(key, !isLocked(key));
-    } else if (chosen == frontAct) {
-        bringToFront(key);
-    } else if (chosen == delAct) {
+        setLocked(metaKey, !isLocked(metaKey));
+    } else if (frontAct && chosen == frontAct) {
+        bringToFront(metaKey);
+    } else if (delAct && chosen == delAct) {
         const QString name = key.mid(7);
         if (m_model->mode == MashEditMode::Regular) {
             m_model->activeRegularVariant()->buttons.remove(name);

@@ -10,7 +10,7 @@ class MashEditorCanvas : public QGraphicsView
 {
     Q_OBJECT
 public:
-    enum class Tool { Pointer, PlaceButton };
+    enum class Tool { Pointer, PlaceButton, SetBackground };
     enum class ViewMode { Edit, Preview };
 
     explicit MashEditorCanvas(QWidget *parent = nullptr);
@@ -26,6 +26,7 @@ public:
     void zoomBy(double factor);
 
     QString selectedObjectKey() const { return m_selectedKey; }
+    void selectObjectByKey(const QString &key);
 
 signals:
     void selectionChanged(const QString &objectKey);
@@ -48,7 +49,9 @@ private:
     QGraphicsItem *itemAtScenePos(const QPointF &sp) const;
     void updateItemVisuals();
     void placeNewButtonAt(const QPointF &sp);
+    void setBackgroundFromAsset(const QString &assetFile);
     void bringToFront(const QString &key);
+    void updateSelectionOutline();
 
     MashEditorModel *m_model = nullptr;
     Tool m_tool = Tool::Pointer;
@@ -58,6 +61,7 @@ private:
     bool m_gridVisible = true;
     QString m_selectedKey;
     QGraphicsItem *m_selectedItem = nullptr;
+    QGraphicsRectItem *m_selectionOutline = nullptr;
     QMap<QString, QGraphicsItem *> m_itemMap;
 
     bool m_dragging = false;

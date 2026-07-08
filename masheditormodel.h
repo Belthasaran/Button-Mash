@@ -3,6 +3,7 @@
 
 #include "skinmetadata.h"
 #include "skinparser.h"
+#include <QSet>
 #include <QString>
 
 enum class MashEditMode { Regular, Piano };
@@ -18,6 +19,9 @@ public:
     PianoSkin piano;
     SkinMetadata metadata;
 
+    QSet<QString> loadedRegularKeys;
+    QSet<QString> loadedPianoKeys;
+
     int activeSubSkin = 0;
     bool dirtyRegular = false;
     bool dirtyPiano = false;
@@ -31,8 +35,19 @@ public:
     RegularSkin *activeRegularVariant();
     const RegularSkin *activeRegularVariant() const;
 
+    QString regularBackgroundKey() const;
+    QString regularBackgroundKeyForVariant(const RegularSkin &variant) const;
+    QString regularButtonKey(const QString &name) const;
+    QString pianoMainareaKey() const;
+    QString pianoButtonKey(const QString &name) const;
+    QString canvasBackgroundKey() const;
+    bool isObjectLocked(const QString &key) const;
+
     static QStringList snesButtonNames();
     static QString snesNameForEnum(int snesButtonEnum);
+
+private:
+    void snapshotLoadedKeys();
 };
 
 #endif
