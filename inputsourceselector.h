@@ -67,6 +67,8 @@ private:
     void    activateUsb2SnesStuff();
     void    setArduinoInfo();
     void    setLocalControllers();
+    void    ensureLocalControllerProvider(int comboIndex = -1);
+    void    syncCurrentProviderFromSelection();
 
     // QDialog interface
 public slots:

@@ -58,7 +58,8 @@ LocalController *LocalControllerManager::createProvider(QString id)
 #endif
     if (id.startsWith("QGamepad"))
         toret = new QGamepadSource(id.split(" ").at(1).toUInt());
-    toret->m_id = id;
+    if (toret != nullptr)
+        toret->m_id = id;
     return toret;
 }
 

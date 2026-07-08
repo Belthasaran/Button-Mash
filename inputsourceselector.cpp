@@ -264,8 +264,66 @@ void InputSourceSelector::setLocalControllers()
     ui->xinputComboBox->blockSignals(false);
 }
 
+void InputSourceSelector::ensureLocalControllerProvider(int comboIndex)
+{
+    if (comboIndex < 0)
+        comboIndex = ui->xinputComboBox->currentIndex();
+    if (comboIndex < 0 || ui->xinputComboBox->count() == 0)
+        return;
+
+    QString deviceId = ui->xinputComboBox->itemData(comboIndex, Qt::UserRole + 1).toString();
+    if (localcontrollerProvider != nullptr && localcontrollerProvider->id() == deviceId)
+    {
+        if (ui->xinputRadioButton->isChecked())
+            m_currentProvider = localcontrollerProvider;
+        return;
+    }
+
+    if (m_currentProvider == localcontrollerProvider)
+        m_currentProvider = nullptr;
+    delete localcontrollerProvider;
+    localcontrollerProvider = LocalControllerManager::getManager()->createProvider(deviceId);
+    if (localcontrollerProvider == nullptr)
+        return;
+
+    if (localcontrollerMapping.isEmpty())
+        localcontrollerMapping = LocalControllerManager::getManager()->loadMapping(*globalSetting, "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING);
+    localcontrollerProvider->setMapping(localcontrollerMapping);
+    if (ui->xinputRadioButton->isChecked())
+        m_currentProvider = localcontrollerProvider;
+}
+
+void InputSourceSelector::syncCurrentProviderFromSelection()
+{
+    if (ui->snesClassicRadioButton->isChecked())
+    {
+        if (snesClassicTelnet == nullptr)
+            snesClassicTelnet = new SNESClassicTelnet();
+        m_currentProvider = snesClassicTelnet;
+    }
+    else if (ui->arduinoRadioButton->isChecked())
+    {
+        if (arduinoCom == nullptr)
+            arduinoCom = new ArduinoCOM(ui->arduinoComComboBox->currentData(Qt::UserRole + 1).toString());
+        m_currentProvider = arduinoCom;
+    }
+    else if (ui->usb2snesRadioButton->isChecked())
+    {
+        if (usb2snesProvider == nullptr)
+            usb2snesProvider = new Usb2SnesSource(usb2snes);
+        m_currentProvider = usb2snesProvider;
+    }
+    else if (ui->xinputRadioButton->isChecked())
+    {
+        ui->mappingButton->setEnabled(true);
+        ensureLocalControllerProvider();
+        m_currentProvider = localcontrollerProvider;
+    }
+}
+
 void InputSourceSelector::on_buttonBox_accepted()
 {
+    syncCurrentProviderFromSelection();
     if (ui->snesClassicRadioButton->isChecked())
         globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_SNESCLASSIC_TELNET);
     if (ui->snesClassicStuffRadioButton->isChecked())
@@ -286,7 +344,8 @@ void InputSourceSelector::on_buttonBox_accepted()
         globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_LOCAL_CONTROLLER);
         globalSetting->setValue("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID, ui->xinputComboBox->currentData(Qt::UserRole + 1).toString());
         LocalControllerManager::getManager()->saveMapping(*globalSetting, "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING, localcontrollerMapping);
-        localcontrollerProvider->setMapping(localcontrollerMapping);
+        if (localcontrollerProvider != nullptr)
+            localcontrollerProvider->setMapping(localcontrollerMapping);
     }
     m_delai = ui->delaiSpinBox->value();
     if (m_delai != 0)
@@ -335,11 +394,7 @@ void InputSourceSelector::onSourceButtonClicked(QAbstractButton *but)
     if (but == ui->xinputRadioButton)
     {
         ui->mappingButton->setEnabled(true);
-        if (localcontrollerProvider == nullptr)
-            localcontrollerProvider = LocalControllerManager::getManager()->createProvider(ui->xinputComboBox->currentData(Qt::UserRole + 1).toString());
-        if (localcontrollerMapping.isEmpty())
-            localcontrollerMapping = LocalControllerManager::getManager()->loadMapping(*globalSetting, SETTING_LOCALCONTROLLER_MAPPING);
-        localcontrollerProvider->setMapping(localcontrollerMapping);
+        ensureLocalControllerProvider();
         m_currentProvider = localcontrollerProvider;
     }
 }
@@ -362,9 +417,7 @@ void InputSourceSelector::on_usb2gameComboBox_currentTextChanged(const QString &
 
 void InputSourceSelector::on_xinputComboBox_currentIndexChanged(int index)
 {
-    if (localcontrollerProvider != nullptr)
-        delete localcontrollerProvider;
-    localcontrollerProvider = LocalControllerManager::getManager()->createProvider(ui->xinputComboBox->itemData(index, Qt::UserRole + 1).toString());
+    ensureLocalControllerProvider(index);
 }
 
 

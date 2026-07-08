@@ -198,6 +198,8 @@ SkinSelector::~SkinSelector()
 
 void SkinSelector::on_startButton_clicked()
 {
+    if (inputProvider == nullptr)
+        return;
     PianoSkin pSkin;
     if (ui->pianoCheckBox->isChecked())
     {
@@ -300,9 +302,12 @@ void SkinSelector::on_changeSourceButton_clicked()
     if (inputSelector->exec())
     {
         inputProvider = inputSelector->currentProvider();
-        ui->sourceLabel->setText(QString("<b>%1</b>").arg(inputProvider->name()));
-        timer.start();
+        if (inputProvider != nullptr)
+            ui->sourceLabel->setText(QString("<b>%1</b>").arg(inputProvider->name()));
+        else
+            ui->sourceLabel->setText(tr("No Source provider selected"));
     }
+    timer.start();
 }
 
 
