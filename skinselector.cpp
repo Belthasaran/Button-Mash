@@ -1,6 +1,7 @@
 #include <QDomDocument>
 #include <QDebug>
 #include <QFileDialog>
+#include <QMessageBox>
 
 #include "skinselector.h"
 #include "ui_skinselector.h"
@@ -203,8 +204,15 @@ void SkinSelector::on_startButton_clicked()
     PianoSkin pSkin;
     if (ui->pianoCheckBox->isChecked())
     {
-        pSkin = pianoModel->itemFromIndex(
-                ui->pianoSkinListView->currentIndex())->data(Qt::UserRole + 2).value<PianoSkin>();
+        QModelIndex pianoIndex = ui->pianoSkinListView->currentIndex();
+        QStandardItem* pianoItem = pianoModel->itemFromIndex(pianoIndex);
+        if (!pianoIndex.isValid() || pianoItem == nullptr)
+        {
+            QMessageBox::warning(this, tr("Button Mash"),
+                                 tr("Please select a piano display skin from the list below."));
+            return;
+        }
+        pSkin = pianoItem->data(Qt::UserRole + 2).value<PianoSkin>();
     }
     display = new InputDisplay(currentSkin, pSkin);
     display->setInputProvider(inputProvider);
@@ -220,6 +228,8 @@ void SkinSelector::on_startButton_clicked()
 void SkinSelector::on_pianoCheckBox_stateChanged(int arg1)
 {
     ui->pianoSkinListView->setEnabled(arg1 != 0);
+    if (arg1 != 0 && !ui->pianoSkinListView->currentIndex().isValid())
+        ui->startButton->setEnabled(false);
 }
 
 void SkinSelector::on_skinListView_clicked(const QModelIndex &index)
@@ -259,13 +269,16 @@ void SkinSelector::onTimerTimeout()
     }
     if ((display != nullptr && display->isVisible()) || inputProvider == nullptr)
         return ;
-    if (inputProvider->isReady() && !currentSkin.name.isEmpty())
+    bool pianoReady = !ui->pianoCheckBox->isChecked() || ui->pianoSkinListView->currentIndex().isValid();
+    if (inputProvider->isReady() && !currentSkin.name.isEmpty() && pianoReady)
         ui->startButton->setEnabled(true);
     else {
         ui->startButton->setEnabled(false);
     }
     if (currentSkin.name.isEmpty())
         ui->statusLabel->setText(tr("You need to select a skin. ") + inputProvider->statusText());
+    else if (ui->pianoCheckBox->isChecked() && !ui->pianoSkinListView->currentIndex().isValid())
+        ui->statusLabel->setText(tr("You need to select a piano display skin."));
     else {
         ui->statusLabel->setText(inputProvider->statusText());
     }
