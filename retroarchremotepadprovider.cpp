@@ -3,25 +3,14 @@
 #include <QtEndian>
 #include <cstring>
 
-// Match RetroArch remote_message layout (x86_64 Linux: 20 bytes).
-struct RemoteMessageWire
-{
-    qint32 port;
-    qint32 device;
-    qint32 index;
-    qint32 id;
-    quint16 state;
-};
-
-#if defined(__GNUC__) || defined(__clang__)
-static_assert(sizeof(RemoteMessageWire) == 20 || sizeof(RemoteMessageWire) == 24,
-              "Unexpected remote_message size");
-#endif
-
 enum {
     RETRO_DEVICE_JOYPAD = 1,
     RETRO_DEVICE_ANALOG = 5
 };
+
+// Wire layout (little-endian on PC RetroArch hosts). Useful payload is 18 bytes;
+// RetroArch's native sizeof is often 20 with trailing alignment padding.
+// Field offsets: port@0 device@4 index@8 id@12 state@16.
 
 RetroArchRemotePadProvider::RetroArchRemotePadProvider(quint16 port, QObject *parent)
     : InputProvider(parent)
@@ -101,24 +90,27 @@ InputProvider::SNESButton RetroArchRemotePadProvider::mapJoypadId(int id)
 
 bool RetroArchRemotePadProvider::handleDatagram(const QByteArray &datagram)
 {
-    if (datagram.size() < int(sizeof(RemoteMessageWire)))
+    // Need at least through state (offset 16 + 2). Extra trailing padding/junk ignored.
+    if (datagram.size() < kWireBytes || datagram.size() > kMaxUdpDatagram)
         return false;
 
-    RemoteMessageWire msg;
-    std::memcpy(&msg, datagram.constData(), sizeof(msg));
-    // RetroArch sends native host endian integers (little-endian on PC).
-    if (msg.device != RETRO_DEVICE_JOYPAD)
+    const uchar *p = reinterpret_cast<const uchar *>(datagram.constData());
+    const qint32 device = qFromLittleEndian<qint32>(p + 4);
+    const qint32 id = qFromLittleEndian<qint32>(p + 12);
+    const quint16 state = qFromLittleEndian<quint16>(p + 16);
+
+    if (device != RETRO_DEVICE_JOYPAD)
         return false;
-    if (msg.id < 0 || msg.id > 11)
+    if (id < 0 || id > 11)
         return false;
 
-    SNESButton button = mapJoypadId(msg.id);
+    SNESButton button = mapJoypadId(id);
 
-    const bool nowPressed = msg.state != 0;
-    const bool wasPressed = m_pressed.value(msg.id, false);
+    const bool nowPressed = state != 0;
+    const bool wasPressed = m_pressed.value(id, false);
     if (nowPressed == wasPressed)
         return true;
-    m_pressed[msg.id] = nowPressed;
+    m_pressed[id] = nowPressed;
     if (nowPressed)
         emit buttonPressed(button);
     else
@@ -128,10 +120,28 @@ bool RetroArchRemotePadProvider::handleDatagram(const QByteArray &datagram)
 
 void RetroArchRemotePadProvider::onReadyRead()
 {
+    char discard[1024];
     while (m_socket->hasPendingDatagrams()) {
+        const qint64 sz = m_socket->pendingDatagramSize();
+        if (sz < 0) {
+            m_socket->readDatagram(discard, sizeof(discard));
+            continue;
+        }
+        if (sz > kMaxUdpDatagram) {
+            m_socket->readDatagram(discard, sizeof(discard));
+            continue;
+        }
+        if (sz < kWireBytes) {
+            m_socket->readDatagram(discard, sizeof(discard));
+            continue;
+        }
         QByteArray datagram;
-        datagram.resize(int(m_socket->pendingDatagramSize()));
-        m_socket->readDatagram(datagram.data(), datagram.size());
+        datagram.resize(int(sz));
+        const qint64 n = m_socket->readDatagram(datagram.data(), datagram.size());
+        if (n < kWireBytes)
+            continue;
+        if (n != datagram.size())
+            datagram.resize(int(n));
         handleDatagram(datagram);
     }
 }

@@ -141,7 +141,7 @@ void ButtonMashRemoteProvider::applyBitvector(quint16 after, quint16 pressed, qu
 
 bool ButtonMashRemoteProvider::handleDatagram(const QByteArray &datagram)
 {
-    if (datagram.size() < kBmirBodyBytes)
+    if (datagram.size() < kBmirBodyBytes || datagram.size() > kMaxUdpDatagram)
         return false;
     if (std::memcmp(datagram.constData(), kBmirMagic, 4) != 0)
         return false;
@@ -170,10 +170,30 @@ bool ButtonMashRemoteProvider::handleDatagram(const QByteArray &datagram)
 
 void ButtonMashRemoteProvider::onReadyRead()
 {
+    char discard[1024];
     while (m_socket->hasPendingDatagrams()) {
+        const qint64 sz = m_socket->pendingDatagramSize();
+        if (sz < 0) {
+            m_socket->readDatagram(discard, sizeof(discard));
+            continue;
+        }
+        if (sz > kMaxUdpDatagram) {
+            // Drain oversized datagram without allocating sz bytes (DoS mitigation).
+            // UDP excess beyond this buffer is discarded with the datagram.
+            m_socket->readDatagram(discard, sizeof(discard));
+            continue;
+        }
+        if (sz < kBmirBodyBytes) {
+            m_socket->readDatagram(discard, sizeof(discard));
+            continue;
+        }
         QByteArray datagram;
-        datagram.resize(int(m_socket->pendingDatagramSize()));
-        m_socket->readDatagram(datagram.data(), datagram.size());
+        datagram.resize(int(sz));
+        const qint64 n = m_socket->readDatagram(datagram.data(), datagram.size());
+        if (n < kBmirBodyBytes)
+            continue;
+        if (n != datagram.size())
+            datagram.resize(int(n));
         handleDatagram(datagram);
     }
 }

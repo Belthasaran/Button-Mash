@@ -12,6 +12,7 @@ public:
     static constexpr bool kBmirXxh3Enabled = true;
     static constexpr int kBmirBodyBytes = 36;
     static constexpr int kBmirXxh3Bytes = 8;
+    static constexpr int kMaxUdpDatagram = 4096;
 
     explicit ButtonMashRemoteProvider(quint16 port = 27151, QObject *parent = nullptr);
     ~ButtonMashRemoteProvider() override;

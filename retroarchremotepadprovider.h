@@ -9,6 +9,9 @@ class RetroArchRemotePadProvider : public InputProvider
 {
     Q_OBJECT
 public:
+    static constexpr int kWireBytes = 18; // through state; RetroArch often sends 20 with pad
+    static constexpr int kMaxUdpDatagram = 4096;
+
     explicit RetroArchRemotePadProvider(quint16 port = 55400, QObject *parent = nullptr);
     ~RetroArchRemotePadProvider() override;
 
