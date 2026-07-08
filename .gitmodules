@@ -1,3 +1,9 @@
 [submodule "photoshopapi"]
 	path = photoshopapi
 	url = https://github.com/EmilDohne/PhotoshopAPI.git
+[submodule "sqpackager-action"]
+	path = sqpackager-action
+	url = git@github.com:Belthasaran/sqpackager-action.git
+[submodule "sqpackager"]
+	path = sqpackager
+	url = git@github.com:Belthasaran/SQPackager.git
