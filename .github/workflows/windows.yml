@@ -38,6 +38,10 @@ jobs:
         name: Install SPackager
         uses: Belthasaran/sqpackager-action@sqpackager-action-rhp
       -
+        name: Install 7-Zip
+        run: choco install 7zip -y
+        shell: pwsh
+      -
         name: build
         id: build
         run: SQPackager --build windows
