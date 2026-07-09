@@ -118,7 +118,13 @@ win32 {
     OPENSSL_ROOT = $$(OPENSSL_ROOT_DIR)
     isEmpty(OPENSSL_ROOT): OPENSSL_ROOT = "C:/Program Files/OpenSSL-Win64"
     INCLUDEPATH += $$OPENSSL_ROOT/include
-    LIBS += -L$$OPENSSL_ROOT/lib -llibcrypto
+    exists($$OPENSSL_ROOT/lib/VC/x64/MD/libcrypto.lib) {
+        LIBS += "$$OPENSSL_ROOT/lib/VC/x64/MD/libcrypto.lib"
+    } else:exists($$OPENSSL_ROOT/lib/libcrypto.lib) {
+        LIBS += "$$OPENSSL_ROOT/lib/libcrypto.lib"
+    } else {
+        LIBS += -L$$OPENSSL_ROOT/lib -llibcrypto
+    }
 }
 
 RC_FILE += \
