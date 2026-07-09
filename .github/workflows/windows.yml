@@ -44,8 +44,19 @@ jobs:
       -
         name: Install OpenSSL
         run: |
-          choco install openssl -y
-          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
+          choco install openssl -y --no-progress
+          if (Test-Path 'C:\Program Files\OpenSSL-Win64\include\openssl\evp.h') {
+            $src = 'C:\Program Files\OpenSSL-Win64'
+          } elseif (Test-Path 'C:\Program Files\OpenSSL\include\openssl\evp.h') {
+            $src = 'C:\Program Files\OpenSSL'
+          } else {
+            throw 'OpenSSL headers not found after choco install'
+          }
+          if (-not (Test-Path 'C:\openssl')) {
+            New-Item -ItemType Junction -Path 'C:\openssl' -Target $src | Out-Null
+          }
+          echo "OPENSSL_ROOT_DIR=C:/openssl" >> $env:GITHUB_ENV
+          Get-Item 'C:\openssl\include\openssl\evp.h'
         shell: pwsh
       -
         name: build

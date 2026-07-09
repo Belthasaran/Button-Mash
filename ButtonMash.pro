@@ -95,11 +95,11 @@ HEADERS += \
         inputmirrormanager.h \
         mirrortargetsdialog.h \
         inputtriggers.h \
-        triggersdialog.h
+        triggersdialog.h \
+        third_party/xxhash.h
 unix {
     HEADERS += uinputdevice.h
 }
-        third_party/xxhash.h
 
 FORMS += \
         skinselector.ui \
@@ -116,8 +116,20 @@ unix {
     LIBS += -lcrypto
 }
 win32 {
-    OPENSSL_ROOT = $$(OPENSSL_ROOT_DIR)
-    isEmpty(OPENSSL_ROOT): OPENSSL_ROOT = "C:/Program Files/OpenSSL-Win64"
+    # SQPackager's MSVC env setup drops GITHUB_ENV; prefer C:/openssl junction from CI.
+    OPENSSL_ROOT =
+    exists(C:/openssl/include/openssl/evp.h) {
+        OPENSSL_ROOT = C:/openssl
+    } else:exists(C:/Program Files/OpenSSL-Win64/include/openssl/evp.h) {
+        OPENSSL_ROOT = C:/Program Files/OpenSSL-Win64
+    } else:exists(C:/Program Files/OpenSSL/include/openssl/evp.h) {
+        OPENSSL_ROOT = C:/Program Files/OpenSSL
+    }
+    isEmpty(OPENSSL_ROOT) {
+        OPENSSL_ROOT = $$(OPENSSL_ROOT_DIR)
+        OPENSSL_ROOT ~= s,\\\\,/,g
+    }
+    isEmpty(OPENSSL_ROOT): error("OpenSSL not found. Install OpenSSL or create C:/openssl junction.")
     INCLUDEPATH += "$$OPENSSL_ROOT/include"
     exists($$OPENSSL_ROOT/lib/VC/x64/MD/libcrypto.lib) {
         LIBS += "$$OPENSSL_ROOT/lib/VC/x64/MD/libcrypto.lib"
