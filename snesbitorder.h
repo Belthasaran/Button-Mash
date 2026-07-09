@@ -3,6 +3,7 @@
 
 #include "inputprovider.h"
 #include <QStringList>
+#include <array>
 
 // Hardware JOY1 / serial poll bit positions (bit 15 = B, first bit read).
 namespace SnesBitOrder {
