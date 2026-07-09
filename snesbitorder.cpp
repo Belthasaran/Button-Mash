@@ -51,8 +51,8 @@ QString SnesBitOrder::nameForBitIndex(int bit)
     case Right: return QStringLiteral("Right");
     case A: return QStringLiteral("A");
     case X: return QStringLiteral("X");
-    case L: return QStringLiteral("L");
-    case R: return QStringLiteral("R");
+    case L: return QStringLiteral("Lt");  // reserve L and R for dpad left and dpad R  not shoulder buttons.
+    case R: return QStringLiteral("Rt");
     default: return QString();
     }
 }
@@ -66,12 +66,12 @@ QString SnesBitOrder::abbrevForBitIndex(int bit)
     case Start: return QStringLiteral("[ST]");
     case Up: return QStringLiteral("U");
     case Down: return QStringLiteral("D");
-    case Left: return QStringLiteral("Lf");
-    case Right: return QStringLiteral("Rt");
+    case Left: return QStringLiteral("L");
+    case Right: return QStringLiteral("R");
     case A: return QStringLiteral("A");
     case X: return QStringLiteral("X");
-    case L: return QStringLiteral("L");
-    case R: return QStringLiteral("R");
+    case L: return QStringLiteral("[lt]");  // reserve L and R for dpad left and dpad right not shoulder buttons.
+    case R: return QStringLiteral("[rt]");
     default: return QString();
     }
 }
