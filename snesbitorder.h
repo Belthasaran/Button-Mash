@@ -47,7 +47,8 @@ inline quint64 heldFrames(quint64 holdStartMs, quint64 nowMs)
 {
     if (holdStartMs == 0 || nowMs <= holdStartMs)
         return 0;
-    return quint64((nowMs - holdStartMs) / kSnesFrameMs);
+    return quint64((nowMs - holdStartMs));
+    /*return quint64((nowMs - holdStartMs) / kSnesFrameMs); */
 }
 
 inline quint16 maskForButton(InputProvider::SNESButton button)
