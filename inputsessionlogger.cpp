@@ -8,7 +8,6 @@
 #include <QtEndian>
 #include <cstring>
 
-#define XXH_INLINE_ALL
 #include "third_party/xxhash.h"
 
 static const char kSyncMagic[8] = {

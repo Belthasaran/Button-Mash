@@ -66,6 +66,7 @@ SOURCES += \
 unix {
     SOURCES += uinputdevice.cpp
 }
+SOURCES += third_party/xxhash.c
 
 HEADERS += \
         skinselector.h \
@@ -117,14 +118,15 @@ unix {
 win32 {
     OPENSSL_ROOT = $$(OPENSSL_ROOT_DIR)
     isEmpty(OPENSSL_ROOT): OPENSSL_ROOT = "C:/Program Files/OpenSSL-Win64"
-    INCLUDEPATH += $$OPENSSL_ROOT/include
+    INCLUDEPATH += "$$OPENSSL_ROOT/include"
     exists($$OPENSSL_ROOT/lib/VC/x64/MD/libcrypto.lib) {
         LIBS += "$$OPENSSL_ROOT/lib/VC/x64/MD/libcrypto.lib"
     } else:exists($$OPENSSL_ROOT/lib/libcrypto.lib) {
         LIBS += "$$OPENSSL_ROOT/lib/libcrypto.lib"
     } else {
-        LIBS += -L$$OPENSSL_ROOT/lib -llibcrypto
+        LIBS += -L"$$OPENSSL_ROOT/lib" -llibcrypto
     }
+    LIBS += -lcrypt32
 }
 
 RC_FILE += \
