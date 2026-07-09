@@ -69,6 +69,26 @@ jobs:
         id: build
         run: SQPackager --build windows
       -
+        name: Bundle OpenSSL into standalone archive
+        run: |
+          $archive = "${{ steps.build.outputs.sqpackager_win32_x64_standalone_7zip_non_native_path }}"
+          if (-not (Test-Path $archive)) { throw "Standalone archive not found: $archive" }
+          $work = Join-Path $env:RUNNER_TEMP 'buttonmash-repack'
+          Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $work | Out-Null
+          & 7z x $archive "-o$work" -y
+          $appDir = Get-ChildItem $work -Directory | Select-Object -First 1
+          if (-not $appDir) { throw 'No application directory inside standalone archive' }
+          Copy-Item 'third_party/openssl-win64/libcrypto*.dll' $appDir.FullName -Force
+          if (-not (Get-ChildItem $appDir.FullName -Filter 'libcrypto*.dll')) {
+            throw 'libcrypto runtime DLL was not bundled into the archive'
+          }
+          Remove-Item $archive -Force
+          Push-Location $work
+          & 7z a -t7z $archive .\*
+          Pop-Location
+        shell: pwsh
+      -
         name: Upload 7zip
         uses: actions/upload-artifact@v4
         with:
