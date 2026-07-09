@@ -36,7 +36,7 @@ jobs:
           arch: 'win64_msvc2019_64'
       -
         name: Install SPackager
-        uses: Skarsnik/sqpackager-action@main
+        uses: Belthasaran/sqpackager-action@sqpackager-action-rhp
       -
         name: build
         id: build
