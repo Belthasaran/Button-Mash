@@ -62,8 +62,10 @@ SOURCES += \
         inputmirrormanager.cpp \
         mirrortargetsdialog.cpp \
         inputtriggers.cpp \
-        triggersdialog.cpp \
-        uinputdevice.cpp
+        triggersdialog.cpp
+unix {
+    SOURCES += uinputdevice.cpp
+}
 
 HEADERS += \
         skinselector.h \
@@ -92,8 +94,10 @@ HEADERS += \
         inputmirrormanager.h \
         mirrortargetsdialog.h \
         inputtriggers.h \
-        triggersdialog.h \
-        uinputdevice.h \
+        triggersdialog.h
+unix {
+    HEADERS += uinputdevice.h
+}
         third_party/xxhash.h
 
 FORMS += \
@@ -107,7 +111,15 @@ FORMS += \
 
 INCLUDEPATH += $$PWD
 
-LIBS += -lcrypto
+unix {
+    LIBS += -lcrypto
+}
+win32 {
+    OPENSSL_ROOT = $$(OPENSSL_ROOT_DIR)
+    isEmpty(OPENSSL_ROOT): OPENSSL_ROOT = "C:/Program Files/OpenSSL-Win64"
+    INCLUDEPATH += $$OPENSSL_ROOT/include
+    LIBS += -L$$OPENSSL_ROOT/lib -llibcrypto
+}
 
 RC_FILE += \
     buttonmash.rc
