@@ -57,6 +57,12 @@ jobs:
           }
           echo "OPENSSL_ROOT_DIR=C:/openssl" >> $env:GITHUB_ENV
           Get-Item 'C:\openssl\include\openssl\evp.h'
+          $runtimeDir = 'third_party/openssl-win64'
+          New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+          Copy-Item 'C:\openssl\bin\libcrypto*.dll' $runtimeDir -Force
+          if (-not (Get-ChildItem $runtimeDir -Filter 'libcrypto*.dll')) {
+            throw 'OpenSSL libcrypto runtime DLL not found'
+          }
         shell: pwsh
       -
         name: build

@@ -11,6 +11,7 @@ It currently support SNES Classic hacked with Hakchi2 CE, Arduino based solution
     "qt-major-version" : "qt5",
     "files" : {
         "Skins/" : "Skins/",
-        "usb2snesgames.txt" : "usb2snesgames.txt"
+        "usb2snesgames.txt" : "usb2snesgames.txt",
+        "WIN32:": "third_party/openssl-win64/"
     }
 }
