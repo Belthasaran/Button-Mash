@@ -1,6 +1,7 @@
 #include "inputsourceselector.h"
 #include "mapbuttondialog.h"
 #include "localcontrollermanager.h"
+#include "buttonmashdebug.h"
 #include "ui_inputsourceselector.h"
 
 #include <QSerialPortInfo>
@@ -8,7 +9,6 @@
 #include <QTcpSocket>
 #include <QGamepadManager>
 #include <QGamepad>
-#include <QLoggingCategory>
 #include <QTemporaryFile>
 #include <QSettings>
 
@@ -48,7 +48,6 @@ InputSourceSelector::InputSourceSelector(QWidget *parent) :
     ui(new Ui::InputSourceSelector)
 {
     ui->setupUi(this);
-    QLoggingCategory::setFilterRules(QStringLiteral("qt.gamepad.debug=true"));
     usb2snes = nullptr;
     snesClassicTelnet = nullptr;
     arduinoCom = nullptr;
@@ -93,7 +92,7 @@ InputProvider *InputSourceSelector::getLastProvider()
         {
             arduinoCom = new ArduinoCOM(globalSetting->value("inputSource/" + SETTING_ARDUINOCOM).toString());
             ui->arduinoRadioButton->setChecked(true);
-            qDebug() << "Using Arduino" << arduinoCom->port();
+            qCDebug(buttonmashLog) << "Using Arduino" << arduinoCom->port();
             m_currentProvider = arduinoCom;
         }
         if (inputSource == SETTING_USB2SNES)
@@ -113,15 +112,15 @@ InputProvider *InputSourceSelector::getLastProvider()
                 const auto gamepads = LocalControllerManager::getManager()->listController();
                 if (!gamepads.isEmpty()) {
                     deviceId = gamepads.first().id;
-                    qDebug() << "LocalController device ID empty; falling back to" << deviceId;
+                    qCDebug(buttonmashLog) << "LocalController device ID empty; falling back to" << deviceId;
                 }
             }
             localcontrollerProvider = LocalControllerManager::getManager()->createProvider(deviceId);
             localcontrollerMapping = LocalControllerManager::getManager()->loadMapping(*globalSetting, "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING);
-            qDebug() << "Number of key binded :" << localcontrollerMapping.size();
+            qCDebug(buttonmashLog) << "Number of key binded :" << localcontrollerMapping.size();
             ui->xinputRadioButton->setChecked(true);
             if (localcontrollerProvider == nullptr) {
-                qDebug() << "Could not create LocalController provider for" << deviceId;
+                qCDebug(buttonmashLog) << "Could not create LocalController provider for" << deviceId;
                 return nullptr;
             }
             localcontrollerProvider->setMapping(localcontrollerMapping);
@@ -155,13 +154,13 @@ void InputSourceSelector::scanDevices()
     QList<QSerialPortInfo> infos = QSerialPortInfo::availablePorts();
     foreach (QSerialPortInfo pfi, infos)
     {
-        qDebug() << pfi.description() << pfi.portName();
+        qCDebug(buttonmashLog) << pfi.description() << pfi.portName();
     }
 
     if (!infos.isEmpty())
         setArduinoInfo();
     auto gamepads = LocalControllerManager::getManager()->listController();
-    qDebug() << "Gamepads : " << gamepads.size();
+    qCDebug(buttonmashLog) << "Gamepads : " << gamepads.size();
     if (!gamepads.isEmpty())
         setLocalControllers();
     QTcpSocket  testSocket;
@@ -253,15 +252,15 @@ void InputSourceSelector::setArduinoInfo()
     }
     if (arduinoCom != nullptr)
     {
-        qDebug() << arduinoCom->port();
+        qCDebug(buttonmashLog) << arduinoCom->port();
         unsigned int idx;
         for (idx = 0; idx < ui->arduinoComComboBox->count(); idx++)
         {
-            qDebug() << idx << ui->arduinoComComboBox->itemData(idx, Qt::UserRole + 1).toString();
+            qCDebug(buttonmashLog) << idx << ui->arduinoComComboBox->itemData(idx, Qt::UserRole + 1).toString();
             if (ui->arduinoComComboBox->itemData(idx, Qt::UserRole + 1).toString() == arduinoCom->port())
                 break;
         }
-        qDebug() << "Found at : " << idx;
+        qCDebug(buttonmashLog) << "Found at : " << idx;
         ui->arduinoComComboBox->setCurrentIndex(idx);
     } else {
         if (index_arduino != -1)
@@ -282,8 +281,8 @@ void InputSourceSelector::setLocalControllers()
     for (auto& gamepad : gamepads)
     {
         //QGamepad pad(id);
-        qDebug() << gamepad.id;
-        qDebug() << gamepad.name;
+        qCDebug(buttonmashLog) << gamepad.id;
+        qCDebug(buttonmashLog) << gamepad.name;
         ui->xinputComboBox->addItem(gamepad.name);
         ui->xinputComboBox->setItemData(cpt, gamepad.id, Qt::UserRole + 1);
         cpt++;
@@ -297,7 +296,7 @@ void InputSourceSelector::setLocalControllers()
         unsigned int idx;
         for (idx = 0; idx < ui->xinputComboBox->count(); idx++)
         {
-            qDebug() << localcontrollerProvider->id() << ui->xinputComboBox->itemData(idx, Qt::UserRole + 1).toString();
+            qCDebug(buttonmashLog) << localcontrollerProvider->id() << ui->xinputComboBox->itemData(idx, Qt::UserRole + 1).toString();
             if (ui->xinputComboBox->itemData(idx, Qt::UserRole + 1).toString() == localcontrollerProvider->id())
                 break;
         }
@@ -630,6 +629,7 @@ int inputSourcePersistSelfTest()
     testSettings.setValue(QStringLiteral("inputSource/") + SETTING_LOCALCONTROLLER_DEVICEID,
                           QStringLiteral("QGamepad 1"));
     testSettings.sync();
+    ButtonMashDebug::applyLoggingRules();
 
     QWidget dummy;
     InputSourceSelector selector(&dummy);

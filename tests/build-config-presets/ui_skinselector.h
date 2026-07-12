@@ -55,6 +55,9 @@ public:
     QCheckBox *inputTriggersCheckBox;
     QSpacerItem *triggersSpacer;
     QPushButton *configureTriggersButton;
+    QHBoxLayout *debugRowLayout;
+    QCheckBox *debugConsoleCheckBox;
+    QSpacerItem *debugSpacer;
     QHBoxLayout *horizontalLayout;
     QLabel *label;
     QLineEdit *skinPathEdit;
@@ -198,6 +201,21 @@ public:
 
         verticalLayout->addLayout(triggersRowLayout);
 
+        debugRowLayout = new QHBoxLayout();
+        debugRowLayout->setSpacing(6);
+        debugRowLayout->setObjectName(QString::fromUtf8("debugRowLayout"));
+        debugConsoleCheckBox = new QCheckBox(configFrame);
+        debugConsoleCheckBox->setObjectName(QString::fromUtf8("debugConsoleCheckBox"));
+
+        debugRowLayout->addWidget(debugConsoleCheckBox);
+
+        debugSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        debugRowLayout->addItem(debugSpacer);
+
+
+        verticalLayout->addLayout(debugRowLayout);
+
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(6);
         horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
@@ -335,6 +353,7 @@ public:
         mirrorTargetsButton->setText(QCoreApplication::translate("SkinSelector", "Mirror Targets", nullptr));
         inputTriggersCheckBox->setText(QCoreApplication::translate("SkinSelector", "Enable input triggers", nullptr));
         configureTriggersButton->setText(QCoreApplication::translate("SkinSelector", "Configure Triggers", nullptr));
+        debugConsoleCheckBox->setText(QCoreApplication::translate("SkinSelector", "Debug console output", nullptr));
         label->setText(QCoreApplication::translate("SkinSelector", "Skin folder", nullptr));
         skinPathButton->setText(QCoreApplication::translate("SkinSelector", "...", nullptr));
         label_2->setText(QCoreApplication::translate("SkinSelector", "Regular skins", nullptr));

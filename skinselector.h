@@ -61,6 +61,8 @@ private slots:
 
     void on_presetDeleteButton_clicked();
 
+    void on_debugConsoleCheckBox_toggled(bool checked);
+
 private:
     Ui::SkinSelector *ui;
     QStandardItemModel* listModel;

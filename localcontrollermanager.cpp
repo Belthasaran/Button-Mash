@@ -1,11 +1,11 @@
 #include <QMetaEnum>
-#include <QDebug>
 
 #ifdef Q_OS_WIN
 #include "directinputsource.h"
 #endif
 #include "localcontrollermanager.h"
 #include "qgamepadsource.h"
+#include "buttonmashdebug.h"
 #include <QGamepadManager>
 
 
@@ -20,7 +20,7 @@ LocalControllerManager *LocalControllerManager::getManager()
 
 QList<LocalControllerInfos> LocalControllerManager::listController()
 {
-    qDebug() << "Scanning controllers";
+    qCDebug(buttonmashLog) << "Scanning controllers";
     QList<LocalControllerInfos> toret;
     auto list = QGamepadManager::instance()->connectedGamepads();
     for (auto id : list)
@@ -28,7 +28,7 @@ QList<LocalControllerInfos> LocalControllerManager::listController()
         LocalControllerInfos info;
         info.name = QGamepadManager::instance()->gamepadName(id);
         info.id = "QGamepad " + QString::number(id);
-        qDebug() << "Added Xinput " << info.name;
+        qCDebug(buttonmashLog) << "Added Xinput " << info.name;
         toret << info;
     }
 #ifdef Q_OS_WIN
@@ -40,7 +40,7 @@ QList<LocalControllerInfos> LocalControllerManager::listController()
             LocalControllerInfos info;
             info.name = controller.description();
             info.id = "DirectInput " + QString::number(i);
-            qDebug() << "Added Direct Input " << info.name;
+            qCDebug(buttonmashLog) << "Added Direct Input " << info.name;
             toret << info;
         }
     }
@@ -50,7 +50,7 @@ QList<LocalControllerInfos> LocalControllerManager::listController()
 
 LocalController *LocalControllerManager::createProvider(QString id)
 {
-    qDebug() << "Creating new Localcontroller " << id;
+    qCDebug(buttonmashLog) << "Creating new Localcontroller " << id;
     LocalController* toret = nullptr;
 #ifdef Q_OS_WIN
     if (id.startsWith("DirectInput"))

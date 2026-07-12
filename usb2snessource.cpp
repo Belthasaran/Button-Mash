@@ -1,4 +1,5 @@
 #include "usb2snessource.h"
+#include "buttonmashdebug.h"
 
 static const unsigned int defaultAddress = 0xF90718;
 
@@ -94,7 +95,7 @@ QStringList Usb2SnesSource::loadGamesList()
 
 bool Usb2SnesSource::setGame(QString game)
 {
-    qDebug() << "Loading profile for " << game;
+    qCDebug(buttonmashLog) << "Loading profile for " << game;
     if (lookupAddresses.contains(game))
     {
         address = lookupAddresses[game];

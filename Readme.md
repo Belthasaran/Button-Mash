@@ -17,6 +17,12 @@ npm run test:buttonmash-inputformats
 
 Config: set `BUTTONMASH_CONFIG=/path/to/file.conf` to use a dedicated Ini settings file (omit for the default Qt path, typically `~/.config/ButtonMash.conf`).
 
+Debug console output (input traces, gamepad discovery, etc.) is **off** by default. Enable either:
+- **Startup dialog** → check **Debug console output** (saved in settings), or
+- Environment variable: `BUTTONMASH_DEBUG=1` (or `true`/`yes`/`on`) for the current session
+
+When either is on, Button Mash and Qt gamepad framework debug logs are written to the console.
+
 Note: if you're using a USB connection to an FxPak/Sd2Snes, the firmware will stop communicating for a period of about 5 frames, multiple times per second. This means the input display will not update during those times. If you need 100% accuracy, consider a hardware based input display solution (which Button Mash also supports)
 
 # Skins

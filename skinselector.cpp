@@ -5,6 +5,7 @@
 
 #include "skinselector.h"
 #include "configpresetstore.h"
+#include "buttonmashdebug.h"
 #include "ui_skinselector.h"
 #include "inputdisplay.h"
 #include "skinparser.h"
@@ -59,6 +60,11 @@ SkinSelector::SkinSelector(QWidget *parent) :
     pianoModel = new QStandardItemModel();
     ui->pianoSkinListView->setModel(pianoModel);
     globalSetting = createButtonMashSettings();
+    ButtonMashDebug::loadFromSettings(*globalSetting);
+    ButtonMashDebug::applyLoggingRules();
+    ui->debugConsoleCheckBox->blockSignals(true);
+    ui->debugConsoleCheckBox->setChecked(ButtonMashDebug::settingsEnabled());
+    ui->debugConsoleCheckBox->blockSignals(false);
     //globalSetting->clear();
     if (globalSetting->contains("skinFolder"))
     {
@@ -121,28 +127,28 @@ void    SkinSelector::restoreLastSkin()
             if (!sk.subSkins.isEmpty())
             {
                 unsigned int j = 0;
-                qDebug() << "Sub skin" << globalSetting->value("lastSkin/regularSubSkin").toString();
+                qCDebug(buttonmashLog) << "Sub skin" << globalSetting->value("lastSkin/regularSubSkin").toString();
                 foreach(RegularSkin ssk, sk.subSkins)
                 {
-                    qDebug() << ssk.name;
+                    qCDebug(buttonmashLog) << ssk.name;
                     if (ssk.name == globalSetting->value("lastSkin/regularSubSkin").toString())
                     {
                         ui->subSkinListView->setCurrentIndex(subSkinModel->item(j)->index());
-                        qDebug() << "Crash is here?";
+                        qCDebug(buttonmashLog) << "Crash is here?";
                         currentSkin = ssk;
                         break;
                     }
                     j++;
                 }
             }
-            qDebug() << "Set preview";
+            qCDebug(buttonmashLog) << "Set preview";
             setPreviewScene(currentSkin);
 
             break;
         }
     }
     //Piano Display
-    qDebug() << "Piano Display" << globalSetting->value("lastSkin/pianoDisplay");
+    qCDebug(buttonmashLog) << "Piano Display" << globalSetting->value("lastSkin/pianoDisplay");
     ui->pianoCheckBox->setChecked(globalSetting->value("lastSkin/pianoDisplay").toBool());
     if (!globalSetting->value("lastSkin/pianoDisplay").toBool())
         return;
@@ -192,14 +198,14 @@ void    SkinSelector::addSkinPath(QString path)
     auto list = dir.entryInfoList();
     foreach(QFileInfo fi, list)
     {
-        qDebug() << fi.fileName();
+        qCDebug(buttonmashLog) << fi.fileName();
         if (QFileInfo::exists(fi.absoluteFilePath() + "/skin.xml"))
         {
-            qDebug() << "Found a skin file";
+            qCDebug(buttonmashLog) << "Found a skin file";
             RegularSkin skin = SkinParser::parseRegularSkin(fi.absoluteFilePath() + "/skin.xml");
             if (!SkinParser::xmlError.isEmpty())
-                qDebug() << SkinParser::xmlError;
-            //qDebug() << skin;
+                qCDebug(buttonmashLog) << SkinParser::xmlError;
+            //qCDebug(buttonmashLog) << skin;
             QStandardItem* item = new QStandardItem(QString(tr("%1 by %2")).arg(skin.name).arg(skin.author));
             QVariant var;
             var.setValue(skin);
@@ -210,9 +216,9 @@ void    SkinSelector::addSkinPath(QString path)
         if (QFileInfo::exists(fi.absoluteFilePath() + "/pianodisplay.xml"))
         {
             ui->pianoCheckBox->setEnabled(true);
-            qDebug() << "Found a piano skin file";
+            qCDebug(buttonmashLog) << "Found a piano skin file";
             PianoSkin pSkin = SkinParser::parsePianoSkin(fi.absoluteFilePath() + "/pianodisplay.xml");
-            //qDebug() << pSkin;
+            //qCDebug(buttonmashLog) << pSkin;
             QStandardItem* item = new QStandardItem(QString(tr("%1 by %2")).arg(pSkin.name).arg(pSkin.author));
             QVariant var;
             var.setValue(pSkin);
@@ -432,6 +438,13 @@ void SkinSelector::on_skinEditorButton_clicked()
     if (!QProcess::startDetached(editor, args)) {
         QMessageBox::warning(this, tr("Skin Editor"), tr("Failed to start MashEditor."));
     }
+}
+
+void SkinSelector::on_debugConsoleCheckBox_toggled(bool checked)
+{
+    ButtonMashDebug::setSettingsEnabled(checked);
+    ButtonMashDebug::saveToSettings(*globalSetting);
+    ButtonMashDebug::applyLoggingRules();
 }
 
 void SkinSelector::refreshPresetCombo()

@@ -1,8 +1,10 @@
 #include "skinselector.h"
 #include "configpresetstore.h"
 #include "inputsourceselector.h"
+#include "buttonmashdebug.h"
 #include <QApplication>
 #include <QCoreApplication>
+#include <QProcessEnvironment>
 
 
 int main(int argc, char *argv[])
@@ -14,12 +16,18 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("ButtonMash");
     QCoreApplication::setOrganizationDomain("nyo.fr");
 
+    ButtonMashDebug::initFromEnvironment(QProcessEnvironment::systemEnvironment());
+    ButtonMashDebug::applyLoggingRules();
+
     const QStringList args = a.arguments();
     if (args.contains(QStringLiteral("--self-test-presets"))) {
         return ConfigPresetStore::selfTest();
     }
     if (args.contains(QStringLiteral("--self-test-input-persist"))) {
         return inputSourcePersistSelfTest();
+    }
+    if (args.contains(QStringLiteral("--self-test-debug"))) {
+        return ButtonMashDebug::selfTest();
     }
 
     SkinSelector w;

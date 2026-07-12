@@ -1,11 +1,11 @@
-#include <QDebug>
 #include "arduinocom.h"
+#include "buttonmashdebug.h"
 
 ArduinoCOM::ArduinoCOM(QString port, QObject *parent)
 {
     comPort.setPortName(port);
     connect(&comPort, &QSerialPort::readyRead, this, &ArduinoCOM::portReadyRead);
-    qDebug() << "Creating arduino com, port " << port << comPort.portName();
+    qCDebug(buttonmashLog) << "Creating arduino com, port " << port << comPort.portName();
     packetSize = 3;
     buttonState = 0;
     configurePacket();
@@ -34,7 +34,7 @@ void ArduinoCOM::configurePacket()
 
 void ArduinoCOM::setPort(QString port)
 {
-    qDebug() << "Set port to " << port;
+    qCDebug(buttonmashLog) << "Set port to " << port;
     comPort.setPortName(port);
 }
 
@@ -72,7 +72,7 @@ XXXE xor 0001 = FFF0
 
 void    ArduinoCOM::processNintendoSpy(QByteArray data)
 {
-    //qDebug() << "BLOCK" << data.toHex();
+    //qCDebug(buttonmashLog) << "BLOCK" << data.toHex();
     if (data.size() < 12)
         return ;
     for (int i = 0; i < 12; i++)
@@ -97,16 +97,16 @@ void ArduinoCOM::portReadyRead()
     static QByteArray dataRead;
     QByteArray data = comPort.readAll();
     dataRead.append(data);
-    //qDebug() << "Received " << data.size();
+    //qCDebug(buttonmashLog) << "Received " << data.size();
     if (m_type == Type::NintendoSpy)
     {
         while (!dataRead.isEmpty())
         {
-            //qDebug() << dataRead.toHex();
+            //qCDebug(buttonmashLog) << dataRead.toHex();
             int nextSplit = dataRead.indexOf('\n');
             if (nextSplit == -1)
                 break;
-            //qDebug() << nextSplit;
+            //qCDebug(buttonmashLog) << nextSplit;
             processNintendoSpy(dataRead.left(nextSplit));
             dataRead.remove(0, nextSplit + 1);
         }
@@ -118,22 +118,22 @@ void ArduinoCOM::portReadyRead()
     if (dataRead.size() == packetSize)
     {
         /*if (dataRead != QByteArray::fromHex("FFFFFF"))
-            qDebug() << dataRead;*/
+            qCDebug(buttonmashLog) << dataRead;*/
         quint16 byte2 = ((uchar)dataRead.at(0) << 8) | (uchar)(dataRead.at(1));
         byte2 = ~byte2;
-        //qDebug() << dataRead << QString::number(byte2, 16);
+        //qCDebug(buttonmashLog) << dataRead << QString::number(byte2, 16);
         QMapIterator<quint16, InputProvider::SNESButton> it(maskToButton);
-        //qDebug() << QString::number(buttonState, 16);
+        //qCDebug(buttonmashLog) << QString::number(buttonState, 16);
         while (it.hasNext())
         {
             it.next();
             quint16 mask = it.key();
-            //qDebug() << it.value() << QString::number(mask, 16) << QString::number(static_cast<quint16>(~mask), 16);
+            //qCDebug(buttonmashLog) << it.value() << QString::number(mask, 16) << QString::number(static_cast<quint16>(~mask), 16);
             if ((byte2 & mask) == mask)
             {
                 if ((buttonState & mask) != mask)
                 {
-                    qDebug() << it.value() << "pressed";
+                    qCDebug(buttonmashLog) << it.value() << "pressed";
                     emit buttonPressed(it.value());
                     buttonState = buttonState | mask;
                 }
@@ -141,7 +141,7 @@ void ArduinoCOM::portReadyRead()
                 if ((buttonState & mask) == mask)
                 {
                     buttonState = buttonState ^ mask;
-                    qDebug() << it.value() << "released";
+                    qCDebug(buttonmashLog) << it.value() << "released";
                     emit buttonReleased(it.value());
                 }
             }
@@ -153,16 +153,16 @@ void ArduinoCOM::portReadyRead()
 
 void ArduinoCOM::start()
 {
-    qDebug() << "opening port connection" << comPort.open(QIODevice::ReadWrite);
+    qCDebug(buttonmashLog) << "opening port connection" << comPort.open(QIODevice::ReadWrite);
     comPort.clear();
     comPort.setBaudRate(115200);
     comPort.setDataTerminalReady(true);
-    qDebug() << "BaudRate : " << comPort.baudRate();
-    qDebug() << "Databits : " << comPort.dataBits();
-    qDebug() << "DataTerminalReady : " << comPort.isDataTerminalReady();
-    qDebug() << "Parity : " << comPort.parity();
-    qDebug() << "FlowControl : " << comPort.flowControl();
-    qDebug() << "Stop bits : " << comPort.stopBits();
+    qCDebug(buttonmashLog) << "BaudRate : " << comPort.baudRate();
+    qCDebug(buttonmashLog) << "Databits : " << comPort.dataBits();
+    qCDebug(buttonmashLog) << "DataTerminalReady : " << comPort.isDataTerminalReady();
+    qCDebug(buttonmashLog) << "Parity : " << comPort.parity();
+    qCDebug(buttonmashLog) << "FlowControl : " << comPort.flowControl();
+    qCDebug(buttonmashLog) << "Stop bits : " << comPort.stopBits();
 }
 
 void ArduinoCOM::stop()

@@ -1,7 +1,6 @@
 #include "mapbuttondialog.h"
 #include "ui_mapbuttondialog.h"
-
-#include <QDebug>
+#include "buttonmashdebug.h"
 
 #include <QButtonGroup>
 
@@ -36,16 +35,16 @@ void MapButtonDialog::setDevice(LocalControllerInfos device)
 {
     qGamepadDevice_id = -1;
     ui->nameLabel->setText(device.name);
-    qDebug() << device.id;
+    qCDebug(buttonmashLog) << device.id;
 #ifdef Q_OS_WIN
     directInputDevice_id = -1;
     directInputTimer.stop();
     if (device.id.startsWith("DirectInput"))
     {
-        qDebug() << "Setting Direct Input";
+        qCDebug(buttonmashLog) << "Setting Direct Input";
         directInputDevice_id = device.id.split(" ").at(1).toInt();
         directInputDevice = new QGameController(directInputDevice_id);
-        qDebug() << directInputDevice->isValid();
+        qCDebug(buttonmashLog) << directInputDevice->isValid();
         connect(directInputDevice, &QGameController::gameControllerButtonEvent, this, &MapButtonDialog::onDirectInputButtonEvent);
         connect(directInputDevice, &QGameController::gameControllerAxisEvent, this, &MapButtonDialog::onDirectInputAxisEvent);
         connect(&directInputTimer, &QTimer::timeout, directInputDevice, &QGameController::readGameController);
@@ -98,7 +97,7 @@ void MapButtonDialog::onButtonGroupClicked(QAbstractButton *button)
 
 void MapButtonDialog::onGamepadButtonPressEvent(int deviceId, QGamepadManager::GamepadButton button, double value)
 {
-    qDebug() << button;
+    qCDebug(buttonmashLog) << button;
     if (setMode)
     {
         LocalControllerButtonAxisInfos info;
@@ -107,7 +106,7 @@ void MapButtonDialog::onGamepadButtonPressEvent(int deviceId, QGamepadManager::G
         info.value = value;
         m_mapping[butVal] = info;
         setMode = false;
-        qDebug() << m_mapping.keys();
+        qCDebug(buttonmashLog) << m_mapping.keys();
         m_currentButton->setText(buttonToText(info));
         m_currentButton->setFlat(true);
     }
@@ -127,7 +126,7 @@ void MapButtonDialog::onGamepadAxisEvent(int deviceId, QGamepadManager::GamepadA
         info.axis = axis;
         info.value = value;
         m_mapping[butVal] = info;
-        qDebug() << m_mapping.keys();
+        qCDebug(buttonmashLog) << m_mapping.keys();
         setMode = false;
         m_currentButton->setText(buttonToText(info));
         m_currentButton->setFlat(true);
@@ -137,7 +136,7 @@ void MapButtonDialog::onGamepadAxisEvent(int deviceId, QGamepadManager::GamepadA
 #ifdef Q_OS_WIN
 void MapButtonDialog::onDirectInputButtonEvent(QGameControllerButtonEvent *event)
 {
-    qDebug() << "Direct Input Button event" << event->pressed();
+    qCDebug(buttonmashLog) << "Direct Input Button event" << event->pressed();
     if (setMode)
     {
         if (event->pressed() && event->controllerId() == directInputDevice_id)
@@ -147,7 +146,7 @@ void MapButtonDialog::onDirectInputButtonEvent(QGameControllerButtonEvent *event
             info.button = event->button();
             info.axis = -1;
             info.value = directInputDevice->buttonValue(info.button);
-            qDebug() << "Button" << info.button;
+            qCDebug(buttonmashLog) << "Button" << info.button;
             m_mapping[butVal] = info;
             m_currentButton->setText(buttonToText(info));
             m_currentButton->setFlat(true);
@@ -158,7 +157,7 @@ void MapButtonDialog::onDirectInputButtonEvent(QGameControllerButtonEvent *event
 
 void MapButtonDialog::onDirectInputAxisEvent(QGameControllerAxisEvent *event)
 {
-    qDebug() << "Direct Input Axis event" << event->controllerId();
+    qCDebug(buttonmashLog) << "Direct Input Axis event" << event->controllerId();
     if (setMode)
     {
         if (event->controllerId() == directInputDevice_id)
@@ -168,7 +167,7 @@ void MapButtonDialog::onDirectInputAxisEvent(QGameControllerAxisEvent *event)
             info.button = -1;
             info.axis = event->axis();
             info.value = event->value();
-            qDebug() << "Axis " << info.axis;
+            qCDebug(buttonmashLog) << "Axis " << info.axis;
             m_mapping[butVal] = info;
             m_currentButton->setText(buttonToText(info));
             m_currentButton->setFlat(true);

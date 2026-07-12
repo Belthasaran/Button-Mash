@@ -63,7 +63,8 @@ SOURCES += \
         mirrortargetsdialog.cpp \
         inputtriggers.cpp \
         triggersdialog.cpp \
-        configpresetstore.cpp
+        configpresetstore.cpp \
+        buttonmashdebug.cpp
 unix {
     SOURCES += uinputdevice.cpp
 }
@@ -98,6 +99,7 @@ HEADERS += \
         inputtriggers.h \
         triggersdialog.h \
         configpresetstore.h \
+        buttonmashdebug.h \
         third_party/xxhash.h
 unix {
     HEADERS += uinputdevice.h

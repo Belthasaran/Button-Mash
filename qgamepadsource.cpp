@@ -1,5 +1,5 @@
 #include "qgamepadsource.h"
-#include <QDebug>
+#include "buttonmashdebug.h"
 
 QGamepadSource::QGamepadSource(int device)
 {
@@ -12,7 +12,7 @@ QGamepadSource::QGamepadSource(int device)
 
 void QGamepadSource::onGamepadButtonPressEvent(int deviceId, QGamepadManager::GamepadButton button, double value)
 {
-    qDebug() << "Pressed : " << button;
+    qCDebug(buttonmashLog) << "Pressed : " << button;
     if (deviceId != m_deviceId)
         return;
     if (buttonMapping.contains(button))

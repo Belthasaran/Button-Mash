@@ -1,6 +1,6 @@
 #include "inputdecoder.h"
+#include "buttonmashdebug.h"
 #include <QtEndian>
-#include <QDebug>
 
 InputDecoder::InputDecoder()
 {
@@ -71,7 +71,7 @@ struct timeval {
 RawInputEvent    stringtoRawInputEvent(QString str)
 {
     RawInputEvent toret;
-    //qDebug() << str << "code" << str.mid(20, 4) << "type : " << str.mid(16, 4);
+    //qCDebug(buttonmashLog) << str << "code" << str.mid(20, 4) << "type : " << str.mid(16, 4);
     toret.time_s  =  qToBigEndian<quint32>(str.leftRef(8).toUInt(NULL, 16));
     toret.time_us = qToBigEndian<quint32>(str.midRef(8, 8).toUInt(NULL, 16));
     toret.type = qToBigEndian<quint16>(str.midRef(16, 4).toUInt(NULL, 16));
@@ -82,7 +82,7 @@ RawInputEvent    stringtoRawInputEvent(QString str)
 
 void    InputDecoder::processEvent(RawInputEvent ev)
 {
-    //qDebug() << ev.time_s << ev.time_us << ev.type << ev.code << ev.value;
+    //qCDebug(buttonmashLog) << ev.time_s << ev.time_us << ev.type << ev.code << ev.value;
     //Type 0 is a an empty event to separate event
     if (ev.type == 0x00)
         return ;
@@ -128,11 +128,11 @@ void InputDecoder::decodeHexdump(QString toDecode)
     processEvent(secondEvent);
     return ;
     /*int dumb = toDecode.indexOf("000100");
-    qDebug() << dumb;
+    qCDebug(buttonmashLog) << dumb;
     QString pressReleased = toDecode.mid(dumb + 10, 2); //release/pressed
-    qDebug() << pressReleased;
+    qCDebug(buttonmashLog) << pressReleased;
     QString inputStr = toDecode.mid(dumb + 6, 4); // input?
-    qDebug() << inputStr;
+    qCDebug(buttonmashLog) << inputStr;
     SNESButton     key;
 
     key = strToKey[inputStr];

@@ -22,8 +22,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_SkinSelector_t {
-    QByteArrayData data[23];
-    char stringdata0[514];
+    QByteArrayData data[24];
+    char stringdata0[546];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -54,7 +54,8 @@ QT_MOC_LITERAL(18, 366, 27), // "on_skinEditorButton_clicked"
 QT_MOC_LITERAL(19, 394, 29), // "on_presetSwitchButton_clicked"
 QT_MOC_LITERAL(20, 424, 26), // "on_presetNewButton_clicked"
 QT_MOC_LITERAL(21, 451, 32), // "on_presetOverwriteButton_clicked"
-QT_MOC_LITERAL(22, 484, 29) // "on_presetDeleteButton_clicked"
+QT_MOC_LITERAL(22, 484, 29), // "on_presetDeleteButton_clicked"
+QT_MOC_LITERAL(23, 514, 31) // "on_debugConsoleCheckBox_toggled"
 
     },
     "SkinSelector\0on_startButton_clicked\0"
@@ -71,7 +72,8 @@ QT_MOC_LITERAL(22, 484, 29) // "on_presetDeleteButton_clicked"
     "on_presetSwitchButton_clicked\0"
     "on_presetNewButton_clicked\0"
     "on_presetOverwriteButton_clicked\0"
-    "on_presetDeleteButton_clicked"
+    "on_presetDeleteButton_clicked\0"
+    "on_debugConsoleCheckBox_toggled"
 };
 #undef QT_MOC_LITERAL
 
@@ -81,7 +83,7 @@ static const uint qt_meta_data_SkinSelector[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      17,   14, // methods
+      18,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -89,23 +91,24 @@ static const uint qt_meta_data_SkinSelector[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    0,   99,    2, 0x08 /* Private */,
-       3,    1,  100,    2, 0x08 /* Private */,
-       5,    1,  103,    2, 0x08 /* Private */,
-       8,    0,  106,    2, 0x08 /* Private */,
-       9,    0,  107,    2, 0x08 /* Private */,
-      10,    1,  108,    2, 0x08 /* Private */,
-      11,    0,  111,    2, 0x08 /* Private */,
-      12,    0,  112,    2, 0x08 /* Private */,
-      13,    1,  113,    2, 0x08 /* Private */,
-      15,    0,  116,    2, 0x08 /* Private */,
-      16,    1,  117,    2, 0x08 /* Private */,
-      17,    0,  120,    2, 0x08 /* Private */,
-      18,    0,  121,    2, 0x08 /* Private */,
-      19,    0,  122,    2, 0x08 /* Private */,
-      20,    0,  123,    2, 0x08 /* Private */,
-      21,    0,  124,    2, 0x08 /* Private */,
-      22,    0,  125,    2, 0x08 /* Private */,
+       1,    0,  104,    2, 0x08 /* Private */,
+       3,    1,  105,    2, 0x08 /* Private */,
+       5,    1,  108,    2, 0x08 /* Private */,
+       8,    0,  111,    2, 0x08 /* Private */,
+       9,    0,  112,    2, 0x08 /* Private */,
+      10,    1,  113,    2, 0x08 /* Private */,
+      11,    0,  116,    2, 0x08 /* Private */,
+      12,    0,  117,    2, 0x08 /* Private */,
+      13,    1,  118,    2, 0x08 /* Private */,
+      15,    0,  121,    2, 0x08 /* Private */,
+      16,    1,  122,    2, 0x08 /* Private */,
+      17,    0,  125,    2, 0x08 /* Private */,
+      18,    0,  126,    2, 0x08 /* Private */,
+      19,    0,  127,    2, 0x08 /* Private */,
+      20,    0,  128,    2, 0x08 /* Private */,
+      21,    0,  129,    2, 0x08 /* Private */,
+      22,    0,  130,    2, 0x08 /* Private */,
+      23,    1,  131,    2, 0x08 /* Private */,
 
  // slots: parameters
     QMetaType::Void,
@@ -125,6 +128,7 @@ static const uint qt_meta_data_SkinSelector[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
+    QMetaType::Void, QMetaType::Bool,   14,
 
        0        // eod
 };
@@ -152,6 +156,7 @@ void SkinSelector::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 14: _t->on_presetNewButton_clicked(); break;
         case 15: _t->on_presetOverwriteButton_clicked(); break;
         case 16: _t->on_presetDeleteButton_clicked(); break;
+        case 17: _t->on_debugConsoleCheckBox_toggled((*reinterpret_cast< bool(*)>(_a[1]))); break;
         default: ;
         }
     }
@@ -186,13 +191,13 @@ int SkinSelector::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 17)
+        if (_id < 18)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 17;
+        _id -= 18;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 17)
+        if (_id < 18)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 17;
+        _id -= 18;
     }
     return _id;
 }

@@ -1,5 +1,6 @@
 #include "arduinocom.h"
 #include "inputdisplay.h"
+#include "buttonmashdebug.h"
 #include "skinparser.h"
 #include "ui_inputdisplay.h"
 #include <QDomDocument>
@@ -156,7 +157,7 @@ void    InputDisplay::setPianoLabel()
 
 void InputDisplay::onButtonPressed(InputProvider::SNESButton button)
 {
-    qDebug() << button << "Pressed" << QTime::currentTime();
+    qCDebug(buttonmashLog) << button << "Pressed" << QTime::currentTime();
     if (mapItems.contains(mapButtonToText[button]))
         mapItems[mapButtonToText[button]]->show();
     PianoEvent pe;
@@ -166,7 +167,7 @@ void InputDisplay::onButtonPressed(InputProvider::SNESButton button)
 
 void InputDisplay::onButtonReleased(InputProvider::SNESButton button)
 {
-    qDebug() << button << "Released" << QTime::currentTime();
+    qCDebug(buttonmashLog) << button << "Released" << QTime::currentTime();
     if (mapItems.contains(mapButtonToText[button]))
         mapItems[mapButtonToText[button]]->hide();
     if (pianoEvents.contains(button) && pianoEvents[button].isEmpty() == false)
@@ -185,7 +186,7 @@ void    InputDisplay::filterPianoEvent()
                 PianoEvent& pe = iPe.next();
                 if (pe.endTime.isNull() == false && pe.endTime.isValid() && pe.endTime <= bottomTime)
                 {
-                    //qDebug() << "removing" << but << " Time : " << pe.startTime << " - " << pe.endTime;
+                    //qCDebug(buttonmashLog) << "removing" << but << " Time : " << pe.startTime << " - " << pe.endTime;
                     iPe.remove();
                 }
 
@@ -208,11 +209,11 @@ void InputDisplay::onPianoTimerTimeout()
             {
                 /*if (pe.endTime.isNull())
                 {
-                    qDebug() << "Button without endtime" << but << pe.startTime;
+                    qCDebug(buttonmashLog) << "Button without endtime" << but << pe.startTime;
                     if (pe.startTime.msecsTo(now) > 1000)
                         exit(0);
                 }*/
-                //qDebug() << pe.startTime << pe.endTime;
+                //qCDebug(buttonmashLog) << pe.startTime << pe.endTime;
                 int yRect, hRect;
                 if (pe.endTime.isNull())
                 {
@@ -225,7 +226,7 @@ void InputDisplay::onPianoTimerTimeout()
                     hRect = (pe.startTime.msecsTo(pe.endTime) * pianoHeight) / pianoTimeRange;
                 }
                 QRect   rect(pianoButPos[but], yRect, pianoButWidth[but], hRect);
-                //qDebug() << rect;
+                //qCDebug(buttonmashLog) << rect;
 
                 //pa.setPen(Qt::blue);
                 pa.fillRect(rect, pianoButColor[but]);

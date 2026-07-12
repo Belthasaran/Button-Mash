@@ -1,5 +1,5 @@
-#include <QDebug>
 #include "directinputsource.h"
+#include "buttonmashdebug.h"
 
 DirectInputSource::DirectInputSource(int device)
 {
@@ -55,8 +55,8 @@ void DirectInputSource::setMapping(QMap<InputProvider::SNESButton, LocalControll
             axisMapping[QPair<unsigned int, double>(it.value().axis, it.value().value)] = it.key();
         }
     }
-    qDebug() << buttonMapping;
-    qDebug() << axisMapping;
+    qCDebug(buttonmashLog) << buttonMapping;
+    qCDebug(buttonmashLog) << axisMapping;
 }
 
 void DirectInputSource::handleButtonEvent(QGameControllerButtonEvent *buttonEvent)
@@ -76,23 +76,23 @@ void DirectInputSource::handleButtonEvent(QGameControllerButtonEvent *buttonEven
 void DirectInputSource::handleAxisEvent(QGameControllerAxisEvent *axisEvent)
 {
     QMapIterator<QPair<unsigned int, double>, InputProvider::SNESButton> it(axisMapping);
-    qDebug() << "Axis event" << axisEvent->axis() << axisEvent->value();
+    qCDebug(buttonmashLog) << "Axis event" << axisEvent->axis() << axisEvent->value();
     while (it.hasNext())
     {
         it.next();
         if (it.key().first == axisEvent->axis())
         {
-            qDebug() << "Axis match " << it.value() << " old value " << oldAxisValue[axisEvent->axis()];
+            qCDebug(buttonmashLog) << "Axis match " << it.value() << " old value " << oldAxisValue[axisEvent->axis()];
             if (axisEvent->value() == it.key().second)
             {
-                qDebug() << "Axis " << axisEvent->axis() << " pressed";
+                qCDebug(buttonmashLog) << "Axis " << axisEvent->axis() << " pressed";
                 emit buttonPressed(it.value());
                 continue;
             }
             if (axisEvent->value() != oldAxisValue[axisEvent->axis()]
              && it.key().second == oldAxisValue[axisEvent->axis()])
             {
-                qDebug() << "Axis " << axisEvent->axis() << " released";
+                qCDebug(buttonmashLog) << "Axis " << axisEvent->axis() << " released";
                 emit buttonReleased(it.value());
             }
         }
