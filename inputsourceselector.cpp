@@ -65,6 +65,7 @@ InputProvider *InputSourceSelector::currentProvider()
 
 InputProvider *InputSourceSelector::getLastProvider()
 {
+    resetProviders();
     InputProvider* toret = nullptr;
     if (globalSetting->contains(SETTING_INPUTSOURCE))
     {
@@ -331,6 +332,118 @@ void InputSourceSelector::ensureRemoteProvider()
     }
 }
 
+void InputSourceSelector::resetProviders()
+{
+    m_currentProvider = nullptr;
+    delete snesClassicTelnet;
+    snesClassicTelnet = nullptr;
+    delete arduinoCom;
+    arduinoCom = nullptr;
+    delete usb2snesProvider;
+    usb2snesProvider = nullptr;
+    delete usb2snes;
+    usb2snes = nullptr;
+    delete localcontrollerProvider;
+    localcontrollerProvider = nullptr;
+    delete retroArchRemoteProvider;
+    retroArchRemoteProvider = nullptr;
+    delete buttonMashRemoteProvider;
+    buttonMashRemoteProvider = nullptr;
+    localcontrollerMapping.clear();
+}
+
+void InputSourceSelector::applyUiFromSettings()
+{
+    if (!globalSetting->contains(SETTING_INPUTSOURCE))
+        return;
+
+    const QString inputSource = globalSetting->value(SETTING_INPUTSOURCE).toString();
+    if (inputSource == SETTING_SNESCLASSIC_TELNET)
+        ui->snesClassicRadioButton->setChecked(true);
+    else if (inputSource == SETTING_SNESCLASSIC_STUFF)
+        ui->snesClassicStuffRadioButton->setChecked(true);
+    else if (inputSource == SETTING_ARDUINO)
+        ui->arduinoRadioButton->setChecked(true);
+    else if (inputSource == SETTING_USB2SNES)
+        ui->usb2snesRadioButton->setChecked(true);
+    else if (inputSource == SETTING_LOCAL_CONTROLLER)
+        ui->xinputRadioButton->setChecked(true);
+    else if (inputSource == SETTING_REMOTE_SERVER)
+        ui->remoteRadioButton->setChecked(true);
+
+    if (inputSource == SETTING_REMOTE_SERVER) {
+        const QString proto = globalSetting->value("inputSource/" + SETTING_REMOTE_PROTOCOL,
+                                                   QStringLiteral("ButtonMash")).toString();
+        const int idx = ui->remoteProtocolCombo->findText(proto);
+        ui->remoteProtocolCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+        ui->remotePortSpin->setValue(int(globalSetting->value("inputSource/" + SETTING_REMOTE_PORT, 27151).toUInt()));
+    }
+
+    if (globalSetting->contains(SETTING_DELAI)) {
+        m_delai = globalSetting->value(SETTING_DELAI).toUInt();
+        ui->delaiSpinBox->setValue(int(m_delai));
+    }
+}
+
+void InputSourceSelector::persistInputSourceSettings()
+{
+    if (ui->snesClassicRadioButton->isChecked())
+        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_SNESCLASSIC_TELNET);
+    if (ui->snesClassicStuffRadioButton->isChecked())
+        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_SNESCLASSIC_STUFF);
+    if (ui->arduinoRadioButton->isChecked()) {
+        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_ARDUINO);
+        globalSetting->setValue("inputSource/" + SETTING_ARDUINOCOM,
+                                ui->arduinoComComboBox->currentData(Qt::UserRole + 1).toString());
+    }
+    if (ui->usb2snesRadioButton->isChecked()) {
+        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_USB2SNES);
+        globalSetting->setValue("inputSource/" + SETTING_USB2SNES_DEVICE, ui->usb2snesComboBox->currentText());
+        globalSetting->setValue("inputSource/" + SETTING_USB2SNES_GAME, ui->usb2gameComboBox->currentText());
+    }
+    if (ui->xinputRadioButton->isChecked()) {
+        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_LOCAL_CONTROLLER);
+        globalSetting->setValue("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID,
+                                ui->xinputComboBox->currentData(Qt::UserRole + 1).toString());
+        LocalControllerManager::getManager()->saveMapping(*globalSetting,
+                                                          "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING,
+                                                          localcontrollerMapping);
+        if (localcontrollerProvider != nullptr)
+            localcontrollerProvider->setMapping(localcontrollerMapping);
+    }
+    if (ui->remoteRadioButton->isChecked()) {
+        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_REMOTE_SERVER);
+        globalSetting->setValue("inputSource/" + SETTING_REMOTE_PROTOCOL, ui->remoteProtocolCombo->currentText());
+        globalSetting->setValue("inputSource/" + SETTING_REMOTE_PORT, ui->remotePortSpin->value());
+    }
+    m_delai = ui->delaiSpinBox->value();
+    if (m_delai != 0)
+        globalSetting->setValue(SETTING_DELAI, m_delai);
+    else
+        globalSetting->remove(SETTING_DELAI);
+}
+
+void InputSourceSelector::saveCurrentToSettings()
+{
+    applyUiFromSettings();
+    syncCurrentProviderFromSelection();
+    persistInputSourceSettings();
+}
+
+void InputSourceSelector::reloadFromSettings()
+{
+    resetProviders();
+    if (globalSetting->contains(SETTING_DELAI)) {
+        m_delai = globalSetting->value(SETTING_DELAI).toUInt();
+        ui->delaiSpinBox->setValue(int(m_delai));
+    } else {
+        m_delai = 0;
+        ui->delaiSpinBox->setValue(0);
+    }
+    applyUiFromSettings();
+    getLastProvider();
+}
+
 void InputSourceSelector::syncCurrentProviderFromSelection()
 {
     if (ui->snesClassicRadioButton->isChecked())
@@ -366,38 +479,7 @@ void InputSourceSelector::syncCurrentProviderFromSelection()
 void InputSourceSelector::on_buttonBox_accepted()
 {
     syncCurrentProviderFromSelection();
-    if (ui->snesClassicRadioButton->isChecked())
-        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_SNESCLASSIC_TELNET);
-    if (ui->snesClassicStuffRadioButton->isChecked())
-        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_SNESCLASSIC_STUFF);
-    if (ui->arduinoRadioButton->isChecked())
-    {
-        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_ARDUINO);
-        globalSetting->setValue("inputSource/" + SETTING_ARDUINOCOM, ui->arduinoComComboBox->currentData(Qt::UserRole + 1).toString());
-    }
-    if (ui->usb2snesRadioButton->isChecked())
-    {
-        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_USB2SNES);
-        globalSetting->setValue("inputSource/" + SETTING_USB2SNES_DEVICE, ui->usb2snesComboBox->currentText());
-        globalSetting->setValue("inputSource/" + SETTING_USB2SNES_GAME, ui->usb2gameComboBox->currentText());
-    }
-    if (ui->xinputRadioButton->isChecked())
-    {
-        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_LOCAL_CONTROLLER);
-        globalSetting->setValue("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID, ui->xinputComboBox->currentData(Qt::UserRole + 1).toString());
-        LocalControllerManager::getManager()->saveMapping(*globalSetting, "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING, localcontrollerMapping);
-        if (localcontrollerProvider != nullptr)
-            localcontrollerProvider->setMapping(localcontrollerMapping);
-    }
-    if (ui->remoteRadioButton->isChecked())
-    {
-        globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_REMOTE_SERVER);
-        globalSetting->setValue("inputSource/" + SETTING_REMOTE_PROTOCOL, ui->remoteProtocolCombo->currentText());
-        globalSetting->setValue("inputSource/" + SETTING_REMOTE_PORT, ui->remotePortSpin->value());
-    }
-    m_delai = ui->delaiSpinBox->value();
-    if (m_delai != 0)
-        globalSetting->setValue(SETTING_DELAI, m_delai);
+    persistInputSourceSettings();
     accept();
 }
 

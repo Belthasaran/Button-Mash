@@ -43,9 +43,6 @@ private slots:
 
     void on_changeSourceButton_clicked();
 
-
-    void on_configHSButton_clicked();
-
     void on_shareMirrorCheckBox_toggled(bool checked);
 
     void on_mirrorTargetsButton_clicked();
@@ -55,6 +52,14 @@ private slots:
     void on_configureTriggersButton_clicked();
 
     void on_skinEditorButton_clicked();
+
+    void on_presetSwitchButton_clicked();
+
+    void on_presetNewButton_clicked();
+
+    void on_presetOverwriteButton_clicked();
+
+    void on_presetDeleteButton_clicked();
 
 private:
     Ui::SkinSelector *ui;
@@ -74,6 +79,10 @@ private:
     void    setPreviewScene(const RegularSkin &skin);
     void    saveSkinStarted();
     void    restoreLastSkin();
+    void    refreshPresetCombo();
+    void    flushActiveSettingsToStore();
+    void    applyActiveSettingsFromStore();
+    QString currentPresetName() const;
 
 };
 

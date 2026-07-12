@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<skin name="kbcont" author="mysidia" type="snes">
+
+    <background name="kbcont2" image="kbcont2.png" />
+
+    <button name="a" image="circle-a.png" x="593" y="83" />
+    <button name="b" image="circle-b.png" x="490" y="106" />
+    <button name="x" image="circle-x.png" x="488" y="33" />
+    <button name="y" image="circle-y.png" x="601" y="16" />
+
+    <button name="l" image="circle-l1.png" x="711" y="12" />
+    <button name="r" image="circle-r1.png" x="825" y="25" />
+
+    <button name="start" image="circle-start.png" x="373" y="30" />
+    <button name="select" image="circle-select.png" x="323" y="34" />
+
+    <button name="up" image="circle-up.png" x="415" y="265" />
+    <button name="down" image="circle-down.png" x="232" y="33" />
+    <button name="left" image="circle-left.png" x="127" y="26" />
+    <button name="right" image="circle-right.png" x="339" y="89" />
+
+</skin>

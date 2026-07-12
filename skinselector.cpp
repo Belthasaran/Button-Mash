@@ -4,6 +4,7 @@
 #include <QMessageBox>
 
 #include "skinselector.h"
+#include "configpresetstore.h"
 #include "ui_skinselector.h"
 #include "inputdisplay.h"
 #include "skinparser.h"
@@ -19,6 +20,9 @@
 #include <QProcessEnvironment>
 #include <QShortcut>
 #include <QStandardItemModel>
+#include <QInputDialog>
+#include <QFont>
+#include <QLineEdit>
 
 QSettings* globalSetting;
 
@@ -42,6 +46,12 @@ SkinSelector::SkinSelector(QWidget *parent) :
     ui(new Ui::SkinSelector)
 {
     ui->setupUi(this);
+    if (logicalDpiX() > 120) {
+        QFont f = font();
+        f.setPointSize(f.pointSize() + 2);
+        setFont(f);
+    }
+    ui->statusLabel->setWordWrap(true);
     listModel = new QStandardItemModel();
     ui->skinListView->setModel(listModel);
     subSkinModel = new QStandardItemModel();
@@ -70,7 +80,7 @@ SkinSelector::SkinSelector(QWidget *parent) :
     triggersEngine = new InputTriggersEngine(this);
     triggersEngine->loadSettings(*globalSetting);
     ui->inputTriggersCheckBox->setChecked(triggersEngine->enabled());
-    ui->configHSButton->setVisible(false);
+    refreshPresetCombo();
 }
 
 void    SkinSelector::setPreviewScene(const RegularSkin& skin)
@@ -133,9 +143,9 @@ void    SkinSelector::restoreLastSkin()
     }
     //Piano Display
     qDebug() << "Piano Display" << globalSetting->value("lastSkin/pianoDisplay");
+    ui->pianoCheckBox->setChecked(globalSetting->value("lastSkin/pianoDisplay").toBool());
     if (!globalSetting->value("lastSkin/pianoDisplay").toBool())
         return;
-    ui->pianoCheckBox->setChecked(true);
     for (unsigned int i = 0; i < pianoModel->rowCount(); i++)
     {
         const PianoSkin& sk = pianoModel->item(i)->data(Qt::UserRole + 2).value<PianoSkin>();
@@ -368,16 +378,6 @@ void SkinSelector::on_changeSourceButton_clicked()
 }
 
 
-void SkinSelector::on_configHSButton_clicked()
-{
-    static bool hide = true;
-    if (hide)
-        ui->configFrame->hide();
-    else
-        ui->configFrame->show();
-    hide = !hide;
-}
-
 void SkinSelector::on_shareMirrorCheckBox_toggled(bool checked)
 {
     mirrorManager->setShareEnabled(checked);
@@ -432,4 +432,167 @@ void SkinSelector::on_skinEditorButton_clicked()
     if (!QProcess::startDetached(editor, args)) {
         QMessageBox::warning(this, tr("Skin Editor"), tr("Failed to start MashEditor."));
     }
+}
+
+void SkinSelector::refreshPresetCombo()
+{
+    const QString previous = ui->presetComboBox->currentText();
+    ui->presetComboBox->blockSignals(true);
+    ui->presetComboBox->clear();
+    const QStringList presetNames = ConfigPresetStore::names(*globalSetting);
+    ui->presetComboBox->addItems(presetNames);
+
+    QString selected = globalSetting->value(QStringLiteral("presets/lastSelected")).toString();
+    if (!selected.isEmpty() && presetNames.contains(selected))
+        ui->presetComboBox->setCurrentText(selected);
+    else if (!previous.isEmpty() && presetNames.contains(previous))
+        ui->presetComboBox->setCurrentText(previous);
+
+    ui->presetComboBox->blockSignals(false);
+}
+
+QString SkinSelector::currentPresetName() const
+{
+    return ui->presetComboBox->currentText().trimmed();
+}
+
+void SkinSelector::flushActiveSettingsToStore()
+{
+    saveSkinStarted();
+    mirrorManager->setShareEnabled(ui->shareMirrorCheckBox->isChecked());
+    mirrorManager->saveSettings(*globalSetting);
+    triggersEngine->setEnabled(ui->inputTriggersCheckBox->isChecked());
+    triggersEngine->saveSettings(*globalSetting);
+    inputSelector->saveCurrentToSettings();
+    globalSetting->sync();
+}
+
+void SkinSelector::applyActiveSettingsFromStore()
+{
+    mirrorManager->loadSettings(*globalSetting);
+    ui->shareMirrorCheckBox->setChecked(mirrorManager->shareEnabled());
+    triggersEngine->loadSettings(*globalSetting);
+    ui->inputTriggersCheckBox->setChecked(triggersEngine->enabled());
+
+    const QString skinFolder = globalSetting->value(QStringLiteral("skinFolder")).toString();
+    if (!skinFolder.isEmpty())
+        setSkinPath(skinFolder);
+    restoreLastSkin();
+
+    if (inputProvider != nullptr)
+        inputProvider->stop();
+    inputSelector->reloadFromSettings();
+    inputProvider = inputSelector->currentProvider();
+    if (inputProvider != nullptr)
+        ui->sourceLabel->setText(QStringLiteral("<b>%1</b>").arg(inputProvider->name()));
+    else
+        ui->sourceLabel->setText(tr("No Source provider selected"));
+
+    ui->startButton->setEnabled(false);
+}
+
+void SkinSelector::on_presetSwitchButton_clicked()
+{
+    const QString name = currentPresetName();
+    QString err;
+    if (!ConfigPresetStore::isValidPresetName(name, &err)) {
+        QMessageBox::warning(this, tr("Config Presets"), err);
+        return;
+    }
+    if (!ConfigPresetStore::names(*globalSetting).contains(name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("Select a preset to switch to."));
+        return;
+    }
+
+    if (!ConfigPresetStore::applyPreset(*globalSetting, name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("Failed to apply preset \"%1\".").arg(name));
+        return;
+    }
+
+    applyActiveSettingsFromStore();
+    refreshPresetCombo();
+}
+
+void SkinSelector::on_presetNewButton_clicked()
+{
+    bool ok = false;
+    const QString name = QInputDialog::getText(this, tr("New Config Preset"),
+                                               tr("Preset name:"), QLineEdit::Normal,
+                                               QString(), &ok).trimmed();
+    if (!ok)
+        return;
+
+    QString err;
+    if (!ConfigPresetStore::isValidPresetName(name, &err)) {
+        QMessageBox::warning(this, tr("Config Presets"), err);
+        return;
+    }
+    if (ConfigPresetStore::names(*globalSetting).contains(name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("A preset named \"%1\" already exists.").arg(name));
+        return;
+    }
+
+    flushActiveSettingsToStore();
+    if (!ConfigPresetStore::savePreset(*globalSetting, name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("Failed to save preset \"%1\".").arg(name));
+        return;
+    }
+
+    globalSetting->setValue(QStringLiteral("presets/lastSelected"), name);
+    refreshPresetCombo();
+    ui->presetComboBox->setCurrentText(name);
+}
+
+void SkinSelector::on_presetOverwriteButton_clicked()
+{
+    const QString name = currentPresetName();
+    QString err;
+    if (!ConfigPresetStore::isValidPresetName(name, &err)) {
+        QMessageBox::warning(this, tr("Config Presets"), err);
+        return;
+    }
+    if (!ConfigPresetStore::names(*globalSetting).contains(name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("Select a preset to overwrite."));
+        return;
+    }
+
+    const auto answer = QMessageBox::question(this, tr("Overwrite Config Preset"),
+                                              tr("Replace preset \"%1\" with the current settings?").arg(name));
+    if (answer != QMessageBox::Yes)
+        return;
+
+    flushActiveSettingsToStore();
+    if (!ConfigPresetStore::savePreset(*globalSetting, name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("Failed to overwrite preset \"%1\".").arg(name));
+        return;
+    }
+
+    globalSetting->setValue(QStringLiteral("presets/lastSelected"), name);
+    refreshPresetCombo();
+}
+
+void SkinSelector::on_presetDeleteButton_clicked()
+{
+    const QString name = currentPresetName();
+    QString err;
+    if (!ConfigPresetStore::isValidPresetName(name, &err)) {
+        QMessageBox::warning(this, tr("Config Presets"), err);
+        return;
+    }
+    if (!ConfigPresetStore::names(*globalSetting).contains(name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("Select a preset to delete."));
+        return;
+    }
+
+    const auto answer = QMessageBox::question(this, tr("Delete Config Preset"),
+                                              tr("Delete preset \"%1\"?").arg(name));
+    if (answer != QMessageBox::Yes)
+        return;
+
+    if (!ConfigPresetStore::deletePreset(*globalSetting, name)) {
+        QMessageBox::warning(this, tr("Config Presets"), tr("Failed to delete preset \"%1\".").arg(name));
+        return;
+    }
+
+    refreshPresetCombo();
 }

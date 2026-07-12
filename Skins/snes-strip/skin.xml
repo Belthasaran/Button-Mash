@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<skin name="snes-strip" author="Myzidya -  https://myzid.org" type="snes">
+
+    <background name="Black2" image="black2.png" />
+
+
+    <button name="a" image="v2\circle-a.png" x="280" y="0" />
+    <button name="b" image="v2\circle-b.png" x="220" y="0" />
+    <button name="y" image="v2\circle-y.png" x="190" y="0" />
+    <button name="x" image="v2\circle-x.png" x="250" y="0" />
+
+    <button name="l" image="v2\l1.png" x="310" y="0" />
+    <button name="r" image="v2\r1.png" x="340" y="0" />
+
+    <button name="start" image="v2\circle-start.png" x="150" y="0" />
+    <button name="select" image="v2\circle-select.png" x="122" y="0" />
+
+    <button name="up" image="v2\circle-up.png" x="38" y="0" />
+    <button name="down" image="v2\circle-down.png" x="94" y="0" />
+    <button name="left" image="v2\circle-left.png" x="10" y="0" />
+    <button name="right" image="v2\circle-right.png" x="66" y="0" />
+
+</skin>

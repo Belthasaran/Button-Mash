@@ -29,6 +29,8 @@ public:
     InputProvider*  getLastProvider();
     void    scanDevices();
     unsigned int delai() const;
+    void    saveCurrentToSettings();
+    void    reloadFromSettings();
 
 
 private slots:
@@ -74,6 +76,9 @@ private:
     void    ensureLocalControllerProvider(int comboIndex = -1);
     void    ensureRemoteProvider();
     void    syncCurrentProviderFromSelection();
+    void    resetProviders();
+    void    applyUiFromSettings();
+    void    persistInputSourceSettings();
 
     // QDialog interface
 public slots:
