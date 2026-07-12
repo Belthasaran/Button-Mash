@@ -65,6 +65,10 @@ SkinSelector::SkinSelector(QWidget *parent) :
     ui->debugConsoleCheckBox->blockSignals(true);
     ui->debugConsoleCheckBox->setChecked(ButtonMashDebug::settingsEnabled());
     ui->debugConsoleCheckBox->blockSignals(false);
+    ui->legacyDisplayScalingCheckBox->blockSignals(true);
+    ui->legacyDisplayScalingCheckBox->setChecked(
+        globalSetting->value(QStringLiteral("display/legacyScaling"), false).toBool());
+    ui->legacyDisplayScalingCheckBox->blockSignals(false);
     //globalSetting->clear();
     if (globalSetting->contains("skinFolder"))
     {
@@ -86,6 +90,8 @@ SkinSelector::SkinSelector(QWidget *parent) :
     triggersEngine = new InputTriggersEngine(this);
     triggersEngine->loadSettings(*globalSetting);
     ui->inputTriggersCheckBox->setChecked(triggersEngine->enabled());
+    browserSourceServer = new BrowserSourceServer(this);
+    BrowserSourceServer::loadSettings(*globalSetting);
     refreshPresetCombo();
 }
 
@@ -254,6 +260,22 @@ void SkinSelector::on_startButton_clicked()
         }
         pSkin = pianoItem->data(Qt::UserRole + 2).value<PianoSkin>();
     }
+
+    BrowserSourceServer::loadSettings(*globalSetting);
+    if (BrowserSourceServer::enabled()) {
+        if (!browserSourceServer->start(currentSkin, pSkin, BrowserSourceServer::port())) {
+            QMessageBox::warning(this, tr("Button Mash"),
+                                 tr("HTTP server port is already in use (change port in Mirror Targets)."));
+            return;
+        }
+        const unsigned int delai = inputSelector->delai();
+        browserSourceServer->setDelai(delai);
+        connect(inputProvider, &InputProvider::buttonPressed,
+                browserSourceServer, &BrowserSourceServer::onButtonPressed);
+        connect(inputProvider, &InputProvider::buttonReleased,
+                browserSourceServer, &BrowserSourceServer::onButtonReleased);
+    }
+
     display = new InputDisplay(currentSkin, pSkin);
     display->setInputProvider(inputProvider);
     if (inputSelector->delai() != 0)
@@ -265,6 +287,8 @@ void SkinSelector::on_startButton_clicked()
     connect(inputProvider, &InputProvider::buttonReleased, triggersEngine, &InputTriggersEngine::onButtonReleased);
     mirrorManager->setShareEnabled(ui->shareMirrorCheckBox->isChecked());
     mirrorManager->saveSettings(*globalSetting);
+    globalSetting->setValue(QStringLiteral("display/legacyScaling"),
+                            ui->legacyDisplayScalingCheckBox->isChecked());
     triggersEngine->setEnabled(ui->inputTriggersCheckBox->isChecked());
     triggersEngine->saveSettings(*globalSetting);
     mirrorManager->startSession();
@@ -361,8 +385,11 @@ void SkinSelector::onDisplayClosed()
         disconnect(inputProvider, &InputProvider::buttonReleased, mirrorManager, &InputMirrorManager::onButtonReleased);
         disconnect(inputProvider, &InputProvider::buttonPressed, triggersEngine, &InputTriggersEngine::onButtonPressed);
         disconnect(inputProvider, &InputProvider::buttonReleased, triggersEngine, &InputTriggersEngine::onButtonReleased);
+        disconnect(inputProvider, &InputProvider::buttonPressed, browserSourceServer, &BrowserSourceServer::onButtonPressed);
+        disconnect(inputProvider, &InputProvider::buttonReleased, browserSourceServer, &BrowserSourceServer::onButtonReleased);
         inputProvider->stop();
     }
+    browserSourceServer->stop();
     triggersEngine->stopSession();
     mirrorManager->stopSession();
     mirrorManager->saveSettings(*globalSetting);
@@ -392,9 +419,11 @@ void SkinSelector::on_shareMirrorCheckBox_toggled(bool checked)
 
 void SkinSelector::on_mirrorTargetsButton_clicked()
 {
-    MirrorTargetsDialog dlg(mirrorManager, this);
-    if (dlg.exec() == QDialog::Accepted)
+    MirrorTargetsDialog dlg(mirrorManager, browserSourceServer->isRunning(), this);
+    if (dlg.exec() == QDialog::Accepted) {
         mirrorManager->saveSettings(*globalSetting);
+        BrowserSourceServer::saveSettings(*globalSetting);
+    }
 }
 
 void SkinSelector::on_inputTriggersCheckBox_toggled(bool checked)
@@ -447,6 +476,11 @@ void SkinSelector::on_debugConsoleCheckBox_toggled(bool checked)
     ButtonMashDebug::applyLoggingRules();
 }
 
+void SkinSelector::on_legacyDisplayScalingCheckBox_toggled(bool checked)
+{
+    globalSetting->setValue(QStringLiteral("display/legacyScaling"), checked);
+}
+
 void SkinSelector::refreshPresetCombo()
 {
     const QString previous = ui->presetComboBox->currentText();
@@ -476,6 +510,8 @@ void SkinSelector::flushActiveSettingsToStore()
     mirrorManager->saveSettings(*globalSetting);
     triggersEngine->setEnabled(ui->inputTriggersCheckBox->isChecked());
     triggersEngine->saveSettings(*globalSetting);
+    globalSetting->setValue(QStringLiteral("display/legacyScaling"),
+                            ui->legacyDisplayScalingCheckBox->isChecked());
     inputSelector->saveCurrentToSettings();
     globalSetting->sync();
 }
@@ -486,6 +522,10 @@ void SkinSelector::applyActiveSettingsFromStore()
     ui->shareMirrorCheckBox->setChecked(mirrorManager->shareEnabled());
     triggersEngine->loadSettings(*globalSetting);
     ui->inputTriggersCheckBox->setChecked(triggersEngine->enabled());
+    ui->legacyDisplayScalingCheckBox->blockSignals(true);
+    ui->legacyDisplayScalingCheckBox->setChecked(
+        globalSetting->value(QStringLiteral("display/legacyScaling"), false).toBool());
+    ui->legacyDisplayScalingCheckBox->blockSignals(false);
 
     const QString skinFolder = globalSetting->value(QStringLiteral("skinFolder")).toString();
     if (!skinFolder.isEmpty())

@@ -3,6 +3,7 @@
 
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
+#include <QShowEvent>
 #include <QTime>
 #include <QTimer>
 #include <QWidget>
@@ -48,8 +49,12 @@ private:
     QMap<InputProvider::SNESButton, QColor>              pianoButColor;
     QMap<InputProvider::SNESButton, uint>                pianoButWidth;
     void    closeEvent(QCloseEvent* ev);
+    void    showEvent(QShowEvent *ev) override;
 
     InputProvider*      inputProvider;
+    int                 m_baseWidth;
+    int                 m_baseHeight;
+    bool                m_legacyScaling;
     QPixmap*            pianoDisplay;
     QTimer              pianoTimer;
     uint                pianoHeight;

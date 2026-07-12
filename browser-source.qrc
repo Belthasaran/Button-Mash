@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/browser-source">
+        <file alias="main.html">browser-source/main.html</file>
+        <file alias="stacked.html">browser-source/stacked.html</file>
+        <file alias="piano.html">browser-source/piano.html</file>
+        <file alias="css/display.css">browser-source/css/display.css</file>
+        <file alias="js/piano-renderer.js">browser-source/js/piano-renderer.js</file>
+        <file alias="js/main-renderer.js">browser-source/js/main-renderer.js</file>
+        <file alias="js/websocket-client.js">browser-source/js/websocket-client.js</file>
+    </qresource>
+</RCC>

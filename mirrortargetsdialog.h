@@ -12,7 +12,8 @@ class MirrorTargetsDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit MirrorTargetsDialog(InputMirrorManager *manager, QWidget *parent = nullptr);
+    explicit MirrorTargetsDialog(InputMirrorManager *manager, bool browserServerRunning,
+                                 QWidget *parent = nullptr);
     ~MirrorTargetsDialog() override;
 
 private slots:
@@ -24,14 +25,21 @@ private slots:
     void on_browseFullTextButton_clicked();
     void on_browseSyncTextButton_clicked();
     void on_browseLastNButton_clicked();
+    void on_browserSourcePortSpin_valueChanged(int value);
+    void on_copyMainUrlButton_clicked();
+    void on_copyStackedUrlButton_clicked();
+    void on_copyPianoUrlButton_clicked();
 
 private:
     void loadFromManager();
     void applyToManager();
     void refreshSessionLabel();
+    void refreshBrowserSourceUrls();
+    void copyUrlToClipboard(const QString &url);
 
     Ui::MirrorTargetsDialog *ui;
     InputMirrorManager *m_manager;
+    bool m_browserServerRunning;
 };
 
 #endif

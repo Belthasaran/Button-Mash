@@ -2,6 +2,7 @@
 #include "configpresetstore.h"
 #include "inputsourceselector.h"
 #include "buttonmashdebug.h"
+#include "browsersourceserver.h"
 #include <QApplication>
 #include <QCoreApplication>
 #include <QProcessEnvironment>
@@ -28,6 +29,9 @@ int main(int argc, char *argv[])
     }
     if (args.contains(QStringLiteral("--self-test-debug"))) {
         return ButtonMashDebug::selfTest();
+    }
+    if (args.contains(QStringLiteral("--self-test-browser-server"))) {
+        return BrowserSourceServer::selfTest();
     }
 
     SkinSelector w;

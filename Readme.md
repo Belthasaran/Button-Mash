@@ -6,6 +6,8 @@ It currently support SNES Classic hacked with Hakchi2 CE, Arduino based solution
 
 - **Change source → Remote server**: listen for Button Mash `BMIR` packets or RetroArch `remote_message` (default ports 27151 / 55400).
 - **Share or Mirror Inputs** + **Mirror Targets**: forward presses to remote hosts and/or write binary / text session logs; optional **Last N** rolling CSV/TXT/JSON dashboard files (see `devdocs/BUTTONMASH_INPUT_MIRRORING_SPEC.md`).
+- **OBS Browser Source** (Mirror Targets): optional localhost HTTP + WebSocket server with `/main`, `/stacked`, and `/piano` pages — see `devdocs/BROWSER_SOURCE.md`.
+- **Legacy scaling (Input Display)** checkbox: per-window size compensation for OBS Window Capture on HiDPI displays.
 - RetroArch does **not** natively stream local P1 while a game runs; use Remote RetroPad as a client into Button Mash, or a companion forwarder (documented in `devdocs/BUTTONMASH_RETROARCH_PROTOCOL.md`).
 
 Build / run tests:

@@ -81,8 +81,10 @@ SOURCES       = ../../main.cpp \
 		../../triggersdialog.cpp \
 		../../configpresetstore.cpp \
 		../../buttonmashdebug.cpp \
+		../../browsersourceserver.cpp \
 		../../uinputdevice.cpp \
 		../../third_party/xxhash.c qrc_ressources.cpp \
+		qrc_browser-source.cpp \
 		moc_skinselector.cpp \
 		moc_inputdecoder.cpp \
 		moc_telnetconnection.cpp \
@@ -101,7 +103,8 @@ SOURCES       = ../../main.cpp \
 		moc_inputmirrormanager.cpp \
 		moc_mirrortargetsdialog.cpp \
 		moc_inputtriggers.cpp \
-		moc_triggersdialog.cpp
+		moc_triggersdialog.cpp \
+		moc_browsersourceserver.cpp
 OBJECTS       = main.o \
 		skinselector.o \
 		inputdecoder.o \
@@ -131,9 +134,11 @@ OBJECTS       = main.o \
 		triggersdialog.o \
 		configpresetstore.o \
 		buttonmashdebug.o \
+		browsersourceserver.o \
 		uinputdevice.o \
 		xxhash.o \
 		qrc_ressources.o \
+		qrc_browser-source.o \
 		moc_skinselector.o \
 		moc_inputdecoder.o \
 		moc_telnetconnection.o \
@@ -152,7 +157,8 @@ OBJECTS       = main.o \
 		moc_inputmirrormanager.o \
 		moc_mirrortargetsdialog.o \
 		moc_inputtriggers.o \
-		moc_triggersdialog.o
+		moc_triggersdialog.o \
+		moc_browsersourceserver.o
 DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/linux.conf \
@@ -262,6 +268,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../triggersdialog.h \
 		../../configpresetstore.h \
 		../../buttonmashdebug.h \
+		../../browsersourceserver.h \
 		../../third_party/xxhash.h \
 		../../uinputdevice.h ../../main.cpp \
 		../../skinselector.cpp \
@@ -292,6 +299,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../triggersdialog.cpp \
 		../../configpresetstore.cpp \
 		../../buttonmashdebug.cpp \
+		../../browsersourceserver.cpp \
 		../../uinputdevice.cpp \
 		../../third_party/xxhash.c
 QMAKE_TARGET  = ButtonMash
@@ -386,7 +394,8 @@ Makefile: ../../ButtonMash.pro /usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/q
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/yacc.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/lex.prf \
 		../../ButtonMash.pro \
-		../../ressources.qrc
+		../../ressources.qrc \
+		../../browser-source.qrc
 	$(QMAKE) -o Makefile ../../ButtonMash.pro CONFIG+=debug
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf:
@@ -470,6 +479,7 @@ Makefile: ../../ButtonMash.pro /usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/q
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/lex.prf:
 ../../ButtonMash.pro:
 ../../ressources.qrc:
+../../browser-source.qrc:
 qmake: FORCE
 	@$(QMAKE) -o Makefile ../../ButtonMash.pro CONFIG+=debug
 
@@ -484,10 +494,10 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents ../../ressources.qrc $(DISTDIR)/
+	$(COPY_FILE) --parents ../../ressources.qrc ../../browser-source.qrc $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../../skinselector.h ../../inputdecoder.h ../../telnetconnection.h ../../inputdisplay.h ../../skinparser.h ../../arduinocom.h ../../inputprovider.h ../../inputsourceselector.h ../../qgamepadsource.h ../../mapbuttondialog.h ../../usb2snessource.h ../../usb2snes.h ../../snesclassictelnet.h ../../configurationdialog.h ../../localcontroller.h ../../localcontrollermanager.h ../../sqpath.h ../../snesbitorder.h ../../retroarchremotepadprovider.h ../../buttonmashremoteprovider.h ../../inputsessionstate.h ../../inputsessionlogger.h ../../sessioncrypto.h ../../inputmirrormanager.h ../../mirrortargetsdialog.h ../../inputtriggers.h ../../triggersdialog.h ../../configpresetstore.h ../../buttonmashdebug.h ../../third_party/xxhash.h ../../uinputdevice.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../../main.cpp ../../skinselector.cpp ../../inputdecoder.cpp ../../telnetconnection.cpp ../../inputdisplay.cpp ../../skinparser.cpp ../../arduinocom.cpp ../../inputprovider.cpp ../../inputsourceselector.cpp ../../qgamepadsource.cpp ../../mapbuttondialog.cpp ../../usb2snessource.cpp ../../usb2snes.cpp ../../snesclassictelnet.cpp ../../configurationdialog.cpp ../../localcontroller.cpp ../../localcontrollermanager.cpp ../../snesbitorder.cpp ../../retroarchremotepadprovider.cpp ../../buttonmashremoteprovider.cpp ../../inputsessionstate.cpp ../../inputsessionlogger.cpp ../../sessioncrypto.cpp ../../inputmirrormanager.cpp ../../mirrortargetsdialog.cpp ../../inputtriggers.cpp ../../triggersdialog.cpp ../../configpresetstore.cpp ../../buttonmashdebug.cpp ../../uinputdevice.cpp ../../third_party/xxhash.c $(DISTDIR)/
+	$(COPY_FILE) --parents ../../skinselector.h ../../inputdecoder.h ../../telnetconnection.h ../../inputdisplay.h ../../skinparser.h ../../arduinocom.h ../../inputprovider.h ../../inputsourceselector.h ../../qgamepadsource.h ../../mapbuttondialog.h ../../usb2snessource.h ../../usb2snes.h ../../snesclassictelnet.h ../../configurationdialog.h ../../localcontroller.h ../../localcontrollermanager.h ../../sqpath.h ../../snesbitorder.h ../../retroarchremotepadprovider.h ../../buttonmashremoteprovider.h ../../inputsessionstate.h ../../inputsessionlogger.h ../../sessioncrypto.h ../../inputmirrormanager.h ../../mirrortargetsdialog.h ../../inputtriggers.h ../../triggersdialog.h ../../configpresetstore.h ../../buttonmashdebug.h ../../browsersourceserver.h ../../third_party/xxhash.h ../../uinputdevice.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../../main.cpp ../../skinselector.cpp ../../inputdecoder.cpp ../../telnetconnection.cpp ../../inputdisplay.cpp ../../skinparser.cpp ../../arduinocom.cpp ../../inputprovider.cpp ../../inputsourceselector.cpp ../../qgamepadsource.cpp ../../mapbuttondialog.cpp ../../usb2snessource.cpp ../../usb2snes.cpp ../../snesclassictelnet.cpp ../../configurationdialog.cpp ../../localcontroller.cpp ../../localcontrollermanager.cpp ../../snesbitorder.cpp ../../retroarchremotepadprovider.cpp ../../buttonmashremoteprovider.cpp ../../inputsessionstate.cpp ../../inputsessionlogger.cpp ../../sessioncrypto.cpp ../../inputmirrormanager.cpp ../../mirrortargetsdialog.cpp ../../inputtriggers.cpp ../../triggersdialog.cpp ../../configpresetstore.cpp ../../buttonmashdebug.cpp ../../browsersourceserver.cpp ../../uinputdevice.cpp ../../third_party/xxhash.c $(DISTDIR)/
 	$(COPY_FILE) --parents ../../skinselector.ui ../../inputdisplay.ui ../../inputsourceselector.ui ../../mapbuttondialog.ui ../../configurationdialog.ui ../../mirrortargetsdialog.ui ../../triggersdialog.ui $(DISTDIR)/
 
 
@@ -512,13 +522,24 @@ check: first
 
 benchmark: first
 
-compiler_rcc_make_all: qrc_ressources.cpp
+compiler_rcc_make_all: qrc_ressources.cpp qrc_browser-source.cpp
 compiler_rcc_clean:
-	-$(DEL_FILE) qrc_ressources.cpp
+	-$(DEL_FILE) qrc_ressources.cpp qrc_browser-source.cpp
 qrc_ressources.cpp: ../../ressources.qrc \
 		/usr/lib/qt5/bin/rcc \
 		../../Skins/Default/snes.png
 	/usr/lib/qt5/bin/rcc -name ressources ../../ressources.qrc -o qrc_ressources.cpp
+
+qrc_browser-source.cpp: ../../browser-source.qrc \
+		/usr/lib/qt5/bin/rcc \
+		../../browser-source/piano.html \
+		../../browser-source/main.html \
+		../../browser-source/stacked.html \
+		../../browser-source/css/display.css \
+		../../browser-source/js/piano-renderer.js \
+		../../browser-source/js/websocket-client.js \
+		../../browser-source/js/main-renderer.js
+	/usr/lib/qt5/bin/rcc -name browser-source ../../browser-source.qrc -o qrc_browser-source.cpp
 
 compiler_moc_predefs_make_all: moc_predefs.h
 compiler_moc_predefs_clean:
@@ -526,9 +547,9 @@ compiler_moc_predefs_clean:
 moc_predefs.h: /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 	g++ -pipe -g -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: moc_skinselector.cpp moc_inputdecoder.cpp moc_telnetconnection.cpp moc_inputdisplay.cpp moc_arduinocom.cpp moc_inputprovider.cpp moc_inputsourceselector.cpp moc_mapbuttondialog.cpp moc_usb2snessource.cpp moc_usb2snes.cpp moc_snesclassictelnet.cpp moc_configurationdialog.cpp moc_retroarchremotepadprovider.cpp moc_buttonmashremoteprovider.cpp moc_inputsessionlogger.cpp moc_inputmirrormanager.cpp moc_mirrortargetsdialog.cpp moc_inputtriggers.cpp moc_triggersdialog.cpp
+compiler_moc_header_make_all: moc_skinselector.cpp moc_inputdecoder.cpp moc_telnetconnection.cpp moc_inputdisplay.cpp moc_arduinocom.cpp moc_inputprovider.cpp moc_inputsourceselector.cpp moc_mapbuttondialog.cpp moc_usb2snessource.cpp moc_usb2snes.cpp moc_snesclassictelnet.cpp moc_configurationdialog.cpp moc_retroarchremotepadprovider.cpp moc_buttonmashremoteprovider.cpp moc_inputsessionlogger.cpp moc_inputmirrormanager.cpp moc_mirrortargetsdialog.cpp moc_inputtriggers.cpp moc_triggersdialog.cpp moc_browsersourceserver.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_skinselector.cpp moc_inputdecoder.cpp moc_telnetconnection.cpp moc_inputdisplay.cpp moc_arduinocom.cpp moc_inputprovider.cpp moc_inputsourceselector.cpp moc_mapbuttondialog.cpp moc_usb2snessource.cpp moc_usb2snes.cpp moc_snesclassictelnet.cpp moc_configurationdialog.cpp moc_retroarchremotepadprovider.cpp moc_buttonmashremoteprovider.cpp moc_inputsessionlogger.cpp moc_inputmirrormanager.cpp moc_mirrortargetsdialog.cpp moc_inputtriggers.cpp moc_triggersdialog.cpp
+	-$(DEL_FILE) moc_skinselector.cpp moc_inputdecoder.cpp moc_telnetconnection.cpp moc_inputdisplay.cpp moc_arduinocom.cpp moc_inputprovider.cpp moc_inputsourceselector.cpp moc_mapbuttondialog.cpp moc_usb2snessource.cpp moc_usb2snes.cpp moc_snesclassictelnet.cpp moc_configurationdialog.cpp moc_retroarchremotepadprovider.cpp moc_buttonmashremoteprovider.cpp moc_inputsessionlogger.cpp moc_inputmirrormanager.cpp moc_mirrortargetsdialog.cpp moc_inputtriggers.cpp moc_triggersdialog.cpp moc_browsersourceserver.cpp
 moc_skinselector.cpp: ../../skinselector.h \
 		../../inputdisplay.h \
 		../../skinparser.h \
@@ -549,6 +570,7 @@ moc_skinselector.cpp: ../../skinselector.h \
 		../../inputsessionstate.h \
 		../../sessioncrypto.h \
 		../../inputtriggers.h \
+		../../browsersourceserver.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/steamu/rhplay/button-mash/tests/build-config-presets/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/steamu/rhplay/button-mash -I/home/steamu/rhplay/button-mash -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtGamepad -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtWebSockets -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtXml -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include ../../skinselector.h -o moc_skinselector.cpp
@@ -684,6 +706,13 @@ moc_triggersdialog.cpp: ../../triggersdialog.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/steamu/rhplay/button-mash/tests/build-config-presets/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/steamu/rhplay/button-mash -I/home/steamu/rhplay/button-mash -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtGamepad -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtWebSockets -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtXml -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include ../../triggersdialog.h -o moc_triggersdialog.cpp
 
+moc_browsersourceserver.cpp: ../../browsersourceserver.h \
+		../../inputprovider.h \
+		../../skinparser.h \
+		moc_predefs.h \
+		/usr/lib/qt5/bin/moc
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/steamu/rhplay/button-mash/tests/build-config-presets/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/steamu/rhplay/button-mash -I/home/steamu/rhplay/button-mash -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtGamepad -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtWebSockets -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtXml -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include ../../browsersourceserver.h -o moc_browsersourceserver.cpp
+
 compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
 compiler_moc_source_make_all:
@@ -749,6 +778,7 @@ main.o: ../../main.cpp ../../skinselector.h \
 		../../inputsessionstate.h \
 		../../sessioncrypto.h \
 		../../inputtriggers.h \
+		../../browsersourceserver.h \
 		../../configpresetstore.h \
 		../../buttonmashdebug.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../../main.cpp
@@ -773,6 +803,7 @@ skinselector.o: ../../skinselector.cpp ../../skinselector.h \
 		../../inputsessionstate.h \
 		../../sessioncrypto.h \
 		../../inputtriggers.h \
+		../../browsersourceserver.h \
 		../../configpresetstore.h \
 		../../buttonmashdebug.h \
 		ui_skinselector.h \
@@ -922,6 +953,8 @@ mirrortargetsdialog.o: ../../mirrortargetsdialog.cpp ../../mirrortargetsdialog.h
 		../../inputsessionlogger.h \
 		../../inputsessionstate.h \
 		../../sessioncrypto.h \
+		../../browsersourceserver.h \
+		../../skinparser.h \
 		ui_mirrortargetsdialog.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o mirrortargetsdialog.o ../../mirrortargetsdialog.cpp
 
@@ -943,6 +976,11 @@ configpresetstore.o: ../../configpresetstore.cpp ../../configpresetstore.h
 buttonmashdebug.o: ../../buttonmashdebug.cpp ../../buttonmashdebug.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o buttonmashdebug.o ../../buttonmashdebug.cpp
 
+browsersourceserver.o: ../../browsersourceserver.cpp ../../browsersourceserver.h \
+		../../inputprovider.h \
+		../../skinparser.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o browsersourceserver.o ../../browsersourceserver.cpp
+
 uinputdevice.o: ../../uinputdevice.cpp ../../uinputdevice.h \
 		../../inputprovider.h \
 		../../snesbitorder.h
@@ -953,6 +991,9 @@ xxhash.o: ../../third_party/xxhash.c ../../third_party/xxhash.h
 
 qrc_ressources.o: qrc_ressources.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o qrc_ressources.o qrc_ressources.cpp
+
+qrc_browser-source.o: qrc_browser-source.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o qrc_browser-source.o qrc_browser-source.cpp
 
 moc_skinselector.o: moc_skinselector.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_skinselector.o moc_skinselector.cpp
@@ -1010,6 +1051,9 @@ moc_inputtriggers.o: moc_inputtriggers.cpp
 
 moc_triggersdialog.o: moc_triggersdialog.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_triggersdialog.o moc_triggersdialog.cpp
+
+moc_browsersourceserver.o: moc_browsersourceserver.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_browsersourceserver.o moc_browsersourceserver.cpp
 
 ####### Install
 

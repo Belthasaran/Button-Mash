@@ -61,6 +61,24 @@ public:
     QSpinBox *lastNSpin;
     QLineEdit *lastNPathEdit;
     QPushButton *browseLastNButton;
+    QGroupBox *browserSourceGroup;
+    QVBoxLayout *browserSourceLayout;
+    QHBoxLayout *browserSourceEnableLayout;
+    QCheckBox *browserSourceCheck;
+    QLabel *browserSourcePortLabel;
+    QSpinBox *browserSourcePortSpin;
+    QHBoxLayout *browserSourceUrlsLayout;
+    QLabel *browserSourceMainUrlLabel;
+    QLineEdit *browserSourceMainUrlEdit;
+    QPushButton *copyMainUrlButton;
+    QHBoxLayout *browserSourceStackedUrlsLayout;
+    QLabel *browserSourceStackedUrlLabel;
+    QLineEdit *browserSourceStackedUrlEdit;
+    QPushButton *copyStackedUrlButton;
+    QHBoxLayout *browserSourcePianoUrlsLayout;
+    QLabel *browserSourcePianoUrlLabel;
+    QLineEdit *browserSourcePianoUrlEdit;
+    QPushButton *copyPianoUrlButton;
     QDialogButtonBox *buttonBox;
 
     void setupUi(QDialog *MirrorTargetsDialog)
@@ -224,6 +242,99 @@ public:
 
         verticalLayout->addWidget(logsGroup);
 
+        browserSourceGroup = new QGroupBox(MirrorTargetsDialog);
+        browserSourceGroup->setObjectName(QString::fromUtf8("browserSourceGroup"));
+        browserSourceLayout = new QVBoxLayout(browserSourceGroup);
+        browserSourceLayout->setObjectName(QString::fromUtf8("browserSourceLayout"));
+        browserSourceEnableLayout = new QHBoxLayout();
+        browserSourceEnableLayout->setObjectName(QString::fromUtf8("browserSourceEnableLayout"));
+        browserSourceCheck = new QCheckBox(browserSourceGroup);
+        browserSourceCheck->setObjectName(QString::fromUtf8("browserSourceCheck"));
+
+        browserSourceEnableLayout->addWidget(browserSourceCheck);
+
+        browserSourcePortLabel = new QLabel(browserSourceGroup);
+        browserSourcePortLabel->setObjectName(QString::fromUtf8("browserSourcePortLabel"));
+
+        browserSourceEnableLayout->addWidget(browserSourcePortLabel);
+
+        browserSourcePortSpin = new QSpinBox(browserSourceGroup);
+        browserSourcePortSpin->setObjectName(QString::fromUtf8("browserSourcePortSpin"));
+        browserSourcePortSpin->setMinimum(1024);
+        browserSourcePortSpin->setMaximum(65535);
+        browserSourcePortSpin->setValue(28765);
+
+        browserSourceEnableLayout->addWidget(browserSourcePortSpin);
+
+
+        browserSourceLayout->addLayout(browserSourceEnableLayout);
+
+        browserSourceUrlsLayout = new QHBoxLayout();
+        browserSourceUrlsLayout->setObjectName(QString::fromUtf8("browserSourceUrlsLayout"));
+        browserSourceMainUrlLabel = new QLabel(browserSourceGroup);
+        browserSourceMainUrlLabel->setObjectName(QString::fromUtf8("browserSourceMainUrlLabel"));
+
+        browserSourceUrlsLayout->addWidget(browserSourceMainUrlLabel);
+
+        browserSourceMainUrlEdit = new QLineEdit(browserSourceGroup);
+        browserSourceMainUrlEdit->setObjectName(QString::fromUtf8("browserSourceMainUrlEdit"));
+        browserSourceMainUrlEdit->setReadOnly(true);
+
+        browserSourceUrlsLayout->addWidget(browserSourceMainUrlEdit);
+
+        copyMainUrlButton = new QPushButton(browserSourceGroup);
+        copyMainUrlButton->setObjectName(QString::fromUtf8("copyMainUrlButton"));
+
+        browserSourceUrlsLayout->addWidget(copyMainUrlButton);
+
+
+        browserSourceLayout->addLayout(browserSourceUrlsLayout);
+
+        browserSourceStackedUrlsLayout = new QHBoxLayout();
+        browserSourceStackedUrlsLayout->setObjectName(QString::fromUtf8("browserSourceStackedUrlsLayout"));
+        browserSourceStackedUrlLabel = new QLabel(browserSourceGroup);
+        browserSourceStackedUrlLabel->setObjectName(QString::fromUtf8("browserSourceStackedUrlLabel"));
+
+        browserSourceStackedUrlsLayout->addWidget(browserSourceStackedUrlLabel);
+
+        browserSourceStackedUrlEdit = new QLineEdit(browserSourceGroup);
+        browserSourceStackedUrlEdit->setObjectName(QString::fromUtf8("browserSourceStackedUrlEdit"));
+        browserSourceStackedUrlEdit->setReadOnly(true);
+
+        browserSourceStackedUrlsLayout->addWidget(browserSourceStackedUrlEdit);
+
+        copyStackedUrlButton = new QPushButton(browserSourceGroup);
+        copyStackedUrlButton->setObjectName(QString::fromUtf8("copyStackedUrlButton"));
+
+        browserSourceStackedUrlsLayout->addWidget(copyStackedUrlButton);
+
+
+        browserSourceLayout->addLayout(browserSourceStackedUrlsLayout);
+
+        browserSourcePianoUrlsLayout = new QHBoxLayout();
+        browserSourcePianoUrlsLayout->setObjectName(QString::fromUtf8("browserSourcePianoUrlsLayout"));
+        browserSourcePianoUrlLabel = new QLabel(browserSourceGroup);
+        browserSourcePianoUrlLabel->setObjectName(QString::fromUtf8("browserSourcePianoUrlLabel"));
+
+        browserSourcePianoUrlsLayout->addWidget(browserSourcePianoUrlLabel);
+
+        browserSourcePianoUrlEdit = new QLineEdit(browserSourceGroup);
+        browserSourcePianoUrlEdit->setObjectName(QString::fromUtf8("browserSourcePianoUrlEdit"));
+        browserSourcePianoUrlEdit->setReadOnly(true);
+
+        browserSourcePianoUrlsLayout->addWidget(browserSourcePianoUrlEdit);
+
+        copyPianoUrlButton = new QPushButton(browserSourceGroup);
+        copyPianoUrlButton->setObjectName(QString::fromUtf8("copyPianoUrlButton"));
+
+        browserSourcePianoUrlsLayout->addWidget(copyPianoUrlButton);
+
+
+        browserSourceLayout->addLayout(browserSourcePianoUrlsLayout);
+
+
+        verticalLayout->addWidget(browserSourceGroup);
+
         buttonBox = new QDialogButtonBox(MirrorTargetsDialog);
         buttonBox->setObjectName(QString::fromUtf8("buttonBox"));
         buttonBox->setOrientation(Qt::Horizontal);
@@ -265,6 +376,15 @@ public:
         lastNNLabel->setText(QCoreApplication::translate("MirrorTargetsDialog", "N", nullptr));
         lastNPathEdit->setPlaceholderText(QCoreApplication::translate("MirrorTargetsDialog", "base filename (no extension)", nullptr));
         browseLastNButton->setText(QCoreApplication::translate("MirrorTargetsDialog", "...", nullptr));
+        browserSourceGroup->setTitle(QCoreApplication::translate("MirrorTargetsDialog", "OBS Browser Source", nullptr));
+        browserSourceCheck->setText(QCoreApplication::translate("MirrorTargetsDialog", "Enable localhost browser source server", nullptr));
+        browserSourcePortLabel->setText(QCoreApplication::translate("MirrorTargetsDialog", "Port", nullptr));
+        browserSourceMainUrlLabel->setText(QCoreApplication::translate("MirrorTargetsDialog", "Main:", nullptr));
+        copyMainUrlButton->setText(QCoreApplication::translate("MirrorTargetsDialog", "Copy", nullptr));
+        browserSourceStackedUrlLabel->setText(QCoreApplication::translate("MirrorTargetsDialog", "Stacked:", nullptr));
+        copyStackedUrlButton->setText(QCoreApplication::translate("MirrorTargetsDialog", "Copy", nullptr));
+        browserSourcePianoUrlLabel->setText(QCoreApplication::translate("MirrorTargetsDialog", "Piano:", nullptr));
+        copyPianoUrlButton->setText(QCoreApplication::translate("MirrorTargetsDialog", "Copy", nullptr));
     } // retranslateUi
 
 };

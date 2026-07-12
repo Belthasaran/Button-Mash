@@ -22,8 +22,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MirrorTargetsDialog_t {
-    QByteArrayData data[10];
-    char stringdata0[231];
+    QByteArrayData data[15];
+    char stringdata0[366];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -41,7 +41,12 @@ QT_MOC_LITERAL(5, 89, 21), // "on_buttonBox_accepted"
 QT_MOC_LITERAL(6, 111, 26), // "on_browseBinButton_clicked"
 QT_MOC_LITERAL(7, 138, 31), // "on_browseFullTextButton_clicked"
 QT_MOC_LITERAL(8, 170, 31), // "on_browseSyncTextButton_clicked"
-QT_MOC_LITERAL(9, 202, 28) // "on_browseLastNButton_clicked"
+QT_MOC_LITERAL(9, 202, 28), // "on_browseLastNButton_clicked"
+QT_MOC_LITERAL(10, 231, 37), // "on_browserSourcePortSpin_valu..."
+QT_MOC_LITERAL(11, 269, 5), // "value"
+QT_MOC_LITERAL(12, 275, 28), // "on_copyMainUrlButton_clicked"
+QT_MOC_LITERAL(13, 304, 31), // "on_copyStackedUrlButton_clicked"
+QT_MOC_LITERAL(14, 336, 29) // "on_copyPianoUrlButton_clicked"
 
     },
     "MirrorTargetsDialog\0on_addButton_clicked\0"
@@ -50,7 +55,11 @@ QT_MOC_LITERAL(9, 202, 28) // "on_browseLastNButton_clicked"
     "on_browseBinButton_clicked\0"
     "on_browseFullTextButton_clicked\0"
     "on_browseSyncTextButton_clicked\0"
-    "on_browseLastNButton_clicked"
+    "on_browseLastNButton_clicked\0"
+    "on_browserSourcePortSpin_valueChanged\0"
+    "value\0on_copyMainUrlButton_clicked\0"
+    "on_copyStackedUrlButton_clicked\0"
+    "on_copyPianoUrlButton_clicked"
 };
 #undef QT_MOC_LITERAL
 
@@ -60,7 +69,7 @@ static const uint qt_meta_data_MirrorTargetsDialog[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-       8,   14, // methods
+      12,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -68,14 +77,18 @@ static const uint qt_meta_data_MirrorTargetsDialog[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    0,   54,    2, 0x08 /* Private */,
-       3,    0,   55,    2, 0x08 /* Private */,
-       4,    0,   56,    2, 0x08 /* Private */,
-       5,    0,   57,    2, 0x08 /* Private */,
-       6,    0,   58,    2, 0x08 /* Private */,
-       7,    0,   59,    2, 0x08 /* Private */,
-       8,    0,   60,    2, 0x08 /* Private */,
-       9,    0,   61,    2, 0x08 /* Private */,
+       1,    0,   74,    2, 0x08 /* Private */,
+       3,    0,   75,    2, 0x08 /* Private */,
+       4,    0,   76,    2, 0x08 /* Private */,
+       5,    0,   77,    2, 0x08 /* Private */,
+       6,    0,   78,    2, 0x08 /* Private */,
+       7,    0,   79,    2, 0x08 /* Private */,
+       8,    0,   80,    2, 0x08 /* Private */,
+       9,    0,   81,    2, 0x08 /* Private */,
+      10,    1,   82,    2, 0x08 /* Private */,
+      12,    0,   85,    2, 0x08 /* Private */,
+      13,    0,   86,    2, 0x08 /* Private */,
+      14,    0,   87,    2, 0x08 /* Private */,
 
  // slots: parameters
     QMetaType::Void,
@@ -83,6 +96,10 @@ static const uint qt_meta_data_MirrorTargetsDialog[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Int,   11,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -104,10 +121,13 @@ void MirrorTargetsDialog::qt_static_metacall(QObject *_o, QMetaObject::Call _c, 
         case 5: _t->on_browseFullTextButton_clicked(); break;
         case 6: _t->on_browseSyncTextButton_clicked(); break;
         case 7: _t->on_browseLastNButton_clicked(); break;
+        case 8: _t->on_browserSourcePortSpin_valueChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 9: _t->on_copyMainUrlButton_clicked(); break;
+        case 10: _t->on_copyStackedUrlButton_clicked(); break;
+        case 11: _t->on_copyPianoUrlButton_clicked(); break;
         default: ;
         }
     }
-    (void)_a;
 }
 
 QT_INIT_METAOBJECT const QMetaObject MirrorTargetsDialog::staticMetaObject = { {
@@ -139,13 +159,13 @@ int MirrorTargetsDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 8)
+        if (_id < 12)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 8;
+        _id -= 12;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 8)
+        if (_id < 12)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 8;
+        _id -= 12;
     }
     return _id;
 }

@@ -8,6 +8,10 @@
 #include <QGraphicsPixmapItem>
 #include <QMessageBox>
 #include <QDebug>
+#include <QSettings>
+#include <QShowEvent>
+
+extern QSettings *globalSetting;
 
 #define SNES_CLASSIC_IP "169.254.13.37"
 
@@ -68,8 +72,26 @@ InputDisplay::InputDisplay(RegularSkin skin, PianoSkin pSkin, QWidget *parent) :
         ui->pianoLabel->setVisible(true);
         ui->pianoTagLabel->setVisible(true);
     }
-    this->setFixedSize(windowWidth, scene->sceneRect().height() + pianoHeight + 45);
+    m_baseWidth = windowWidth;
+    m_baseHeight = static_cast<int>(scene->sceneRect().height() + pianoHeight + 45);
+    m_legacyScaling = false;
+    if (globalSetting != nullptr)
+        m_legacyScaling = globalSetting->value(QStringLiteral("display/legacyScaling"), false).toBool();
+    this->setFixedSize(m_baseWidth, m_baseHeight);
     this->setStyleSheet("background-color: black;");
+}
+
+void InputDisplay::showEvent(QShowEvent *ev)
+{
+    if (m_legacyScaling) {
+        const qreal dpr = devicePixelRatioF();
+        if (dpr > 1.0) {
+            setFixedSize(qRound(m_baseWidth / dpr), qRound(m_baseHeight / dpr));
+        } else {
+            setFixedSize(m_baseWidth, m_baseHeight);
+        }
+    }
+    QWidget::showEvent(ev);
 }
 
 void InputDisplay::setInputProvider(InputProvider *inp)

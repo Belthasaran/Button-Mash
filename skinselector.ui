@@ -148,6 +148,16 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="legacyDisplayScalingCheckBox">
+           <property name="toolTip">
+            <string>Use legacy window sizing for the Input Display window (helps OBS Window Capture when display scaling changes geometry).</string>
+           </property>
+           <property name="text">
+            <string>Legacy scaling (Input Display)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="mirrorSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>

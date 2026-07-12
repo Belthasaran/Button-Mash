@@ -49,6 +49,7 @@ public:
     QPushButton *changeSourceButton;
     QHBoxLayout *mirrorRowLayout;
     QCheckBox *shareMirrorCheckBox;
+    QCheckBox *legacyDisplayScalingCheckBox;
     QSpacerItem *mirrorSpacer;
     QPushButton *mirrorTargetsButton;
     QHBoxLayout *triggersRowLayout;
@@ -168,6 +169,11 @@ public:
         shareMirrorCheckBox->setObjectName(QString::fromUtf8("shareMirrorCheckBox"));
 
         mirrorRowLayout->addWidget(shareMirrorCheckBox);
+
+        legacyDisplayScalingCheckBox = new QCheckBox(configFrame);
+        legacyDisplayScalingCheckBox->setObjectName(QString::fromUtf8("legacyDisplayScalingCheckBox"));
+
+        mirrorRowLayout->addWidget(legacyDisplayScalingCheckBox);
 
         mirrorSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
@@ -350,6 +356,10 @@ public:
         sourceLabel->setText(QCoreApplication::translate("SkinSelector", "<html><head/><body><p><span style=\" font-weight:600;\">SNES Classic</span></p></body></html>", nullptr));
         changeSourceButton->setText(QCoreApplication::translate("SkinSelector", "Change source", nullptr));
         shareMirrorCheckBox->setText(QCoreApplication::translate("SkinSelector", "Share or Mirror Inputs", nullptr));
+#if QT_CONFIG(tooltip)
+        legacyDisplayScalingCheckBox->setToolTip(QCoreApplication::translate("SkinSelector", "Use legacy window sizing for the Input Display window (helps OBS Window Capture when display scaling changes geometry).", nullptr));
+#endif // QT_CONFIG(tooltip)
+        legacyDisplayScalingCheckBox->setText(QCoreApplication::translate("SkinSelector", "Legacy scaling (Input Display)", nullptr));
         mirrorTargetsButton->setText(QCoreApplication::translate("SkinSelector", "Mirror Targets", nullptr));
         inputTriggersCheckBox->setText(QCoreApplication::translate("SkinSelector", "Enable input triggers", nullptr));
         configureTriggersButton->setText(QCoreApplication::translate("SkinSelector", "Configure Triggers", nullptr));

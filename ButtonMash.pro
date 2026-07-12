@@ -64,7 +64,8 @@ SOURCES += \
         inputtriggers.cpp \
         triggersdialog.cpp \
         configpresetstore.cpp \
-        buttonmashdebug.cpp
+        buttonmashdebug.cpp \
+        browsersourceserver.cpp
 unix {
     SOURCES += uinputdevice.cpp
 }
@@ -100,6 +101,7 @@ HEADERS += \
         triggersdialog.h \
         configpresetstore.h \
         buttonmashdebug.h \
+        browsersourceserver.h \
         third_party/xxhash.h
 unix {
     HEADERS += uinputdevice.h
@@ -154,4 +156,5 @@ macx: {
 }
 
 RESOURCES += \
-    ressources.qrc
+    ressources.qrc \
+    browser-source.qrc

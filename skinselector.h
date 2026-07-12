@@ -8,6 +8,7 @@
 #include "inputsourceselector.h"
 #include "inputmirrormanager.h"
 #include "inputtriggers.h"
+#include "browsersourceserver.h"
 
 #include <QListView>
 #include <QMainWindow>
@@ -63,6 +64,8 @@ private slots:
 
     void on_debugConsoleCheckBox_toggled(bool checked);
 
+    void on_legacyDisplayScalingCheckBox_toggled(bool checked);
+
 private:
     Ui::SkinSelector *ui;
     QStandardItemModel* listModel;
@@ -75,6 +78,7 @@ private:
     InputSourceSelector* inputSelector;
     InputMirrorManager*  mirrorManager;
     InputTriggersEngine* triggersEngine;
+    BrowserSourceServer* browserSourceServer;
 
     void    setSkinPath(QString path);
     void    addSkinPath(QString path);

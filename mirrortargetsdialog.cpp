@@ -1,18 +1,26 @@
 #include "mirrortargetsdialog.h"
+#include "browsersourceserver.h"
 #include "ui_mirrortargetsdialog.h"
 
 #include <QAbstractItemView>
+#include <QApplication>
+#include <QClipboard>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QCheckBox>
 #include <QHeaderView>
+#include <QSettings>
 #include <QTableWidgetItem>
 
-MirrorTargetsDialog::MirrorTargetsDialog(InputMirrorManager *manager, QWidget *parent)
+extern QSettings *globalSetting;
+
+MirrorTargetsDialog::MirrorTargetsDialog(InputMirrorManager *manager, bool browserServerRunning,
+                                         QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::MirrorTargetsDialog)
     , m_manager(manager)
+    , m_browserServerRunning(browserServerRunning)
 {
     ui->setupUi(this);
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &MirrorTargetsDialog::on_buttonBox_accepted);
@@ -21,6 +29,11 @@ MirrorTargetsDialog::MirrorTargetsDialog(InputMirrorManager *manager, QWidget *p
     ui->targetsTable->setSelectionMode(QAbstractItemView::SingleSelection);
     loadFromManager();
     refreshSessionLabel();
+    refreshBrowserSourceUrls();
+
+    ui->copyMainUrlButton->setEnabled(m_browserServerRunning);
+    ui->copyStackedUrlButton->setEnabled(m_browserServerRunning);
+    ui->copyPianoUrlButton->setEnabled(m_browserServerRunning);
 }
 
 MirrorTargetsDialog::~MirrorTargetsDialog()
@@ -36,6 +49,21 @@ void MirrorTargetsDialog::refreshSessionLabel()
     ui->sessionLabel->setText(tr("Session ID: %1").arg(sid));
 }
 
+void MirrorTargetsDialog::refreshBrowserSourceUrls()
+{
+    const quint16 port = quint16(ui->browserSourcePortSpin->value());
+    ui->browserSourceMainUrlEdit->setText(BrowserSourceServer::urlForView(QStringLiteral("main"), port));
+    ui->browserSourceStackedUrlEdit->setText(BrowserSourceServer::urlForView(QStringLiteral("stacked"), port));
+    ui->browserSourcePianoUrlEdit->setText(BrowserSourceServer::urlForView(QStringLiteral("piano"), port));
+}
+
+void MirrorTargetsDialog::copyUrlToClipboard(const QString &url)
+{
+    if (url.isEmpty())
+        return;
+    QApplication::clipboard()->setText(url);
+}
+
 void MirrorTargetsDialog::loadFromManager()
 {
     ui->binCheck->setChecked(m_manager->logger()->binEnabled());
@@ -47,6 +75,11 @@ void MirrorTargetsDialog::loadFromManager()
     ui->lastNCheck->setChecked(m_manager->logger()->lastNEnabled());
     ui->lastNSpin->setValue(m_manager->logger()->lastN());
     ui->lastNPathEdit->setText(m_manager->logger()->lastNBasePath());
+
+    if (globalSetting != nullptr)
+        BrowserSourceServer::loadSettings(*globalSetting);
+    ui->browserSourceCheck->setChecked(BrowserSourceServer::enabled());
+    ui->browserSourcePortSpin->setValue(BrowserSourceServer::port());
 
     ui->targetsTable->setRowCount(0);
     const auto targets = m_manager->targets();
@@ -93,6 +126,30 @@ void MirrorTargetsDialog::applyToManager()
         targets.append(t);
     }
     m_manager->setTargets(targets);
+
+    BrowserSourceServer::setEnabled(ui->browserSourceCheck->isChecked());
+    BrowserSourceServer::setPort(quint16(ui->browserSourcePortSpin->value()));
+}
+
+void MirrorTargetsDialog::on_browserSourcePortSpin_valueChanged(int value)
+{
+    Q_UNUSED(value);
+    refreshBrowserSourceUrls();
+}
+
+void MirrorTargetsDialog::on_copyMainUrlButton_clicked()
+{
+    copyUrlToClipboard(ui->browserSourceMainUrlEdit->text());
+}
+
+void MirrorTargetsDialog::on_copyStackedUrlButton_clicked()
+{
+    copyUrlToClipboard(ui->browserSourceStackedUrlEdit->text());
+}
+
+void MirrorTargetsDialog::on_copyPianoUrlButton_clicked()
+{
+    copyUrlToClipboard(ui->browserSourcePianoUrlEdit->text());
 }
 
 void MirrorTargetsDialog::on_addButton_clicked()
