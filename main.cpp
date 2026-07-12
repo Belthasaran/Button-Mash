@@ -1,5 +1,6 @@
 #include "skinselector.h"
 #include "configpresetstore.h"
+#include "inputsourceselector.h"
 #include <QApplication>
 #include <QCoreApplication>
 
@@ -16,6 +17,9 @@ int main(int argc, char *argv[])
     const QStringList args = a.arguments();
     if (args.contains(QStringLiteral("--self-test-presets"))) {
         return ConfigPresetStore::selfTest();
+    }
+    if (args.contains(QStringLiteral("--self-test-input-persist"))) {
+        return inputSourcePersistSelfTest();
     }
 
     SkinSelector w;

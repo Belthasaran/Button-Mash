@@ -9,6 +9,8 @@
 #include <QGamepadManager>
 #include <QGamepad>
 #include <QLoggingCategory>
+#include <QTemporaryFile>
+#include <QSettings>
 
 extern QSettings* globalSetting;
 
@@ -29,6 +31,17 @@ const QString SETTING_LOCALCONTROLLER_DEVICEID = "LocalControllerDeviceId";
 const QString SETTING_REMOTE_SERVER = "RemoteServer";
 const QString SETTING_REMOTE_PROTOCOL = "RemoteProtocol";
 const QString SETTING_REMOTE_PORT = "RemotePort";
+
+namespace {
+
+QString resolvedSettingValue(const QString &uiValue, const QString &savedValue)
+{
+    if (!uiValue.isEmpty())
+        return uiValue;
+    return savedValue;
+}
+
+} // namespace
 
 InputSourceSelector::InputSourceSelector(QWidget *parent) :
     QDialog(parent),
@@ -95,11 +108,23 @@ InputProvider *InputSourceSelector::getLastProvider()
         }
         if (inputSource == SETTING_LOCAL_CONTROLLER)
         {
-            localcontrollerProvider = LocalControllerManager::getManager()->createProvider(globalSetting->value("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID).toString());
+            QString deviceId = globalSetting->value("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID).toString();
+            if (deviceId.isEmpty()) {
+                const auto gamepads = LocalControllerManager::getManager()->listController();
+                if (!gamepads.isEmpty()) {
+                    deviceId = gamepads.first().id;
+                    qDebug() << "LocalController device ID empty; falling back to" << deviceId;
+                }
+            }
+            localcontrollerProvider = LocalControllerManager::getManager()->createProvider(deviceId);
             localcontrollerMapping = LocalControllerManager::getManager()->loadMapping(*globalSetting, "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING);
             qDebug() << "Number of key binded :" << localcontrollerMapping.size();
-            localcontrollerProvider->setMapping(localcontrollerMapping);
             ui->xinputRadioButton->setChecked(true);
+            if (localcontrollerProvider == nullptr) {
+                qDebug() << "Could not create LocalController provider for" << deviceId;
+                return nullptr;
+            }
+            localcontrollerProvider->setMapping(localcontrollerMapping);
             m_currentProvider = localcontrollerProvider;
         }
         if (inputSource == SETTING_REMOTE_SERVER)
@@ -393,18 +418,38 @@ void InputSourceSelector::persistInputSourceSettings()
         globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_SNESCLASSIC_STUFF);
     if (ui->arduinoRadioButton->isChecked()) {
         globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_ARDUINO);
-        globalSetting->setValue("inputSource/" + SETTING_ARDUINOCOM,
-                                ui->arduinoComComboBox->currentData(Qt::UserRole + 1).toString());
+        const QString port = resolvedSettingValue(
+            ui->arduinoComComboBox->currentData(Qt::UserRole + 1).toString(),
+            arduinoCom != nullptr ? arduinoCom->port()
+                                  : globalSetting->value("inputSource/" + SETTING_ARDUINOCOM).toString());
+        if (!port.isEmpty())
+            globalSetting->setValue("inputSource/" + SETTING_ARDUINOCOM, port);
     }
     if (ui->usb2snesRadioButton->isChecked()) {
         globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_USB2SNES);
-        globalSetting->setValue("inputSource/" + SETTING_USB2SNES_DEVICE, ui->usb2snesComboBox->currentText());
-        globalSetting->setValue("inputSource/" + SETTING_USB2SNES_GAME, ui->usb2gameComboBox->currentText());
+        const QString device = resolvedSettingValue(
+            ui->usb2snesComboBox->currentText(),
+            globalSetting->value("inputSource/" + SETTING_USB2SNES_DEVICE).toString());
+        const QString game = resolvedSettingValue(
+            ui->usb2gameComboBox->currentText(),
+            globalSetting->value("inputSource/" + SETTING_USB2SNES_GAME).toString());
+        if (!device.isEmpty())
+            globalSetting->setValue("inputSource/" + SETTING_USB2SNES_DEVICE, device);
+        if (!game.isEmpty())
+            globalSetting->setValue("inputSource/" + SETTING_USB2SNES_GAME, game);
     }
     if (ui->xinputRadioButton->isChecked()) {
         globalSetting->setValue(SETTING_INPUTSOURCE, SETTING_LOCAL_CONTROLLER);
-        globalSetting->setValue("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID,
-                                ui->xinputComboBox->currentData(Qt::UserRole + 1).toString());
+        QString deviceId = ui->xinputComboBox->currentData(Qt::UserRole + 1).toString();
+        if (deviceId.isEmpty() && localcontrollerProvider != nullptr)
+            deviceId = localcontrollerProvider->id();
+        if (deviceId.isEmpty())
+            deviceId = globalSetting->value("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID).toString();
+        if (!deviceId.isEmpty())
+            globalSetting->setValue("inputSource/" + SETTING_LOCALCONTROLLER_DEVICEID, deviceId);
+        if (localcontrollerMapping.isEmpty())
+            localcontrollerMapping = LocalControllerManager::getManager()->loadMapping(
+                *globalSetting, "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING);
         LocalControllerManager::getManager()->saveMapping(*globalSetting,
                                                           "inputSource/" + SETTING_LOCALCONTROLLER_MAPPING,
                                                           localcontrollerMapping);
@@ -567,4 +612,40 @@ void InputSourceSelector::on_mappingButton_clicked()
     }
 }
 
+int inputSourcePersistSelfTest()
+{
+    QTemporaryFile tmp;
+    tmp.setAutoRemove(true);
+    if (!tmp.open())
+        return 1;
+
+    const QString path = tmp.fileName();
+    tmp.close();
+
+    QSettings testSettings(path, QSettings::IniFormat);
+    QSettings *previous = globalSetting;
+    globalSetting = &testSettings;
+
+    testSettings.setValue(SETTING_INPUTSOURCE, SETTING_LOCAL_CONTROLLER);
+    testSettings.setValue(QStringLiteral("inputSource/") + SETTING_LOCALCONTROLLER_DEVICEID,
+                          QStringLiteral("QGamepad 1"));
+    testSettings.sync();
+
+    QWidget dummy;
+    InputSourceSelector selector(&dummy);
+    selector.saveCurrentToSettings();
+
+    if (testSettings.value(QStringLiteral("inputSource/") + SETTING_LOCALCONTROLLER_DEVICEID).toString()
+            != QStringLiteral("QGamepad 1")) {
+        globalSetting = previous;
+        return 2;
+    }
+
+    testSettings.setValue(QStringLiteral("inputSource/") + SETTING_LOCALCONTROLLER_DEVICEID, QString());
+    testSettings.sync();
+    selector.reloadFromSettings();
+
+    globalSetting = previous;
+    return 0;
+}
 

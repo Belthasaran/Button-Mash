@@ -85,4 +85,6 @@ public slots:
     int exec();
 };
 
+int inputSourcePersistSelfTest();
+
 #endif // INPUTSOURCESELECTOR_H
