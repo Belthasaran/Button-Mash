@@ -46,6 +46,7 @@ private slots:
     void onTcpNewConnection();
     void onWsNewConnection();
     void onWsDisconnected();
+    void onWsTextMessage(const QString &message);
 
 private:
     struct InputChange {

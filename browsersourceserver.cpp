@@ -410,6 +410,7 @@ void BrowserSourceServer::onWsNewConnection()
         m_pendingWsView.clear();
         m_clientViews.insert(ws, view);
         connect(ws, &QWebSocket::disconnected, this, &BrowserSourceServer::onWsDisconnected);
+        connect(ws, &QWebSocket::textMessageReceived, this, &BrowserSourceServer::onWsTextMessage);
         sendInit(ws, view);
     }
 }
@@ -422,6 +423,23 @@ void BrowserSourceServer::onWsDisconnected()
     m_clients.removeAll(ws);
     m_clientViews.remove(ws);
     ws->deleteLater();
+}
+
+void BrowserSourceServer::onWsTextMessage(const QString &message)
+{
+    QWebSocket *ws = qobject_cast<QWebSocket *>(sender());
+    if (ws == nullptr)
+        return;
+
+    const QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
+    if (!doc.isObject())
+        return;
+    if (doc.object().value(QStringLiteral("type")).toString() != QLatin1String("ping"))
+        return;
+
+    QJsonObject pong;
+    pong.insert(QStringLiteral("type"), QStringLiteral("pong"));
+    ws->sendTextMessage(QString::fromUtf8(QJsonDocument(pong).toJson(QJsonDocument::Compact)));
 }
 
 QString BrowserSourceServer::mimeTypeForPath(const QString &path) const
@@ -631,6 +649,20 @@ int BrowserSourceServer::selfTest()
     }
     if (!gotInput)
         return 9;
+
+    bool gotPong = false;
+    QObject::disconnect(&ws, nullptr, nullptr, nullptr);
+    QObject::connect(&ws, &QWebSocket::textMessageReceived, [&](const QString &msg) {
+        const QJsonDocument doc = QJsonDocument::fromJson(msg.toUtf8());
+        if (doc.isObject() && doc.object().value(QStringLiteral("type")).toString() == QLatin1String("pong"))
+            gotPong = true;
+    });
+    ws.sendTextMessage(QStringLiteral("{\"type\":\"ping\"}"));
+    for (int i = 0; i < 20 && !gotPong; ++i) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    }
+    if (!gotPong)
+        return 10;
 
     ws.close();
     server.stop();
