@@ -82,6 +82,7 @@ SOURCES       = ../../main.cpp \
 		../../configpresetstore.cpp \
 		../../buttonmashdebug.cpp \
 		../../browsersourceserver.cpp \
+		../../skinpath.cpp \
 		../../uinputdevice.cpp \
 		../../third_party/xxhash.c qrc_ressources.cpp \
 		qrc_browser-source.cpp \
@@ -135,6 +136,7 @@ OBJECTS       = main.o \
 		configpresetstore.o \
 		buttonmashdebug.o \
 		browsersourceserver.o \
+		skinpath.o \
 		uinputdevice.o \
 		xxhash.o \
 		qrc_ressources.o \
@@ -269,6 +271,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../configpresetstore.h \
 		../../buttonmashdebug.h \
 		../../browsersourceserver.h \
+		../../skinpath.h \
 		../../third_party/xxhash.h \
 		../../uinputdevice.h ../../main.cpp \
 		../../skinselector.cpp \
@@ -300,6 +303,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../configpresetstore.cpp \
 		../../buttonmashdebug.cpp \
 		../../browsersourceserver.cpp \
+		../../skinpath.cpp \
 		../../uinputdevice.cpp \
 		../../third_party/xxhash.c
 QMAKE_TARGET  = ButtonMash
@@ -496,8 +500,8 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents ../../ressources.qrc ../../browser-source.qrc $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../../skinselector.h ../../inputdecoder.h ../../telnetconnection.h ../../inputdisplay.h ../../skinparser.h ../../arduinocom.h ../../inputprovider.h ../../inputsourceselector.h ../../qgamepadsource.h ../../mapbuttondialog.h ../../usb2snessource.h ../../usb2snes.h ../../snesclassictelnet.h ../../configurationdialog.h ../../localcontroller.h ../../localcontrollermanager.h ../../sqpath.h ../../snesbitorder.h ../../retroarchremotepadprovider.h ../../buttonmashremoteprovider.h ../../inputsessionstate.h ../../inputsessionlogger.h ../../sessioncrypto.h ../../inputmirrormanager.h ../../mirrortargetsdialog.h ../../inputtriggers.h ../../triggersdialog.h ../../configpresetstore.h ../../buttonmashdebug.h ../../browsersourceserver.h ../../third_party/xxhash.h ../../uinputdevice.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../../main.cpp ../../skinselector.cpp ../../inputdecoder.cpp ../../telnetconnection.cpp ../../inputdisplay.cpp ../../skinparser.cpp ../../arduinocom.cpp ../../inputprovider.cpp ../../inputsourceselector.cpp ../../qgamepadsource.cpp ../../mapbuttondialog.cpp ../../usb2snessource.cpp ../../usb2snes.cpp ../../snesclassictelnet.cpp ../../configurationdialog.cpp ../../localcontroller.cpp ../../localcontrollermanager.cpp ../../snesbitorder.cpp ../../retroarchremotepadprovider.cpp ../../buttonmashremoteprovider.cpp ../../inputsessionstate.cpp ../../inputsessionlogger.cpp ../../sessioncrypto.cpp ../../inputmirrormanager.cpp ../../mirrortargetsdialog.cpp ../../inputtriggers.cpp ../../triggersdialog.cpp ../../configpresetstore.cpp ../../buttonmashdebug.cpp ../../browsersourceserver.cpp ../../uinputdevice.cpp ../../third_party/xxhash.c $(DISTDIR)/
+	$(COPY_FILE) --parents ../../skinselector.h ../../inputdecoder.h ../../telnetconnection.h ../../inputdisplay.h ../../skinparser.h ../../arduinocom.h ../../inputprovider.h ../../inputsourceselector.h ../../qgamepadsource.h ../../mapbuttondialog.h ../../usb2snessource.h ../../usb2snes.h ../../snesclassictelnet.h ../../configurationdialog.h ../../localcontroller.h ../../localcontrollermanager.h ../../sqpath.h ../../snesbitorder.h ../../retroarchremotepadprovider.h ../../buttonmashremoteprovider.h ../../inputsessionstate.h ../../inputsessionlogger.h ../../sessioncrypto.h ../../inputmirrormanager.h ../../mirrortargetsdialog.h ../../inputtriggers.h ../../triggersdialog.h ../../configpresetstore.h ../../buttonmashdebug.h ../../browsersourceserver.h ../../skinpath.h ../../third_party/xxhash.h ../../uinputdevice.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../../main.cpp ../../skinselector.cpp ../../inputdecoder.cpp ../../telnetconnection.cpp ../../inputdisplay.cpp ../../skinparser.cpp ../../arduinocom.cpp ../../inputprovider.cpp ../../inputsourceselector.cpp ../../qgamepadsource.cpp ../../mapbuttondialog.cpp ../../usb2snessource.cpp ../../usb2snes.cpp ../../snesclassictelnet.cpp ../../configurationdialog.cpp ../../localcontroller.cpp ../../localcontrollermanager.cpp ../../snesbitorder.cpp ../../retroarchremotepadprovider.cpp ../../buttonmashremoteprovider.cpp ../../inputsessionstate.cpp ../../inputsessionlogger.cpp ../../sessioncrypto.cpp ../../inputmirrormanager.cpp ../../mirrortargetsdialog.cpp ../../inputtriggers.cpp ../../triggersdialog.cpp ../../configpresetstore.cpp ../../buttonmashdebug.cpp ../../browsersourceserver.cpp ../../skinpath.cpp ../../uinputdevice.cpp ../../third_party/xxhash.c $(DISTDIR)/
 	$(COPY_FILE) --parents ../../skinselector.ui ../../inputdisplay.ui ../../inputsourceselector.ui ../../mapbuttondialog.ui ../../configurationdialog.ui ../../mirrortargetsdialog.ui ../../triggersdialog.ui $(DISTDIR)/
 
 
@@ -780,7 +784,8 @@ main.o: ../../main.cpp ../../skinselector.h \
 		../../inputtriggers.h \
 		../../browsersourceserver.h \
 		../../configpresetstore.h \
-		../../buttonmashdebug.h
+		../../buttonmashdebug.h \
+		../../skinpath.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../../main.cpp
 
 skinselector.o: ../../skinselector.cpp ../../skinselector.h \
@@ -806,6 +811,7 @@ skinselector.o: ../../skinselector.cpp ../../skinselector.h \
 		../../browsersourceserver.h \
 		../../configpresetstore.h \
 		../../buttonmashdebug.h \
+		../../skinpath.h \
 		ui_skinselector.h \
 		../../sqpath.h \
 		../../mirrortargetsdialog.h \
@@ -825,10 +831,12 @@ inputdisplay.o: ../../inputdisplay.cpp ../../arduinocom.h \
 		../../inputdisplay.h \
 		../../skinparser.h \
 		../../buttonmashdebug.h \
+		../../skinpath.h \
 		ui_inputdisplay.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o inputdisplay.o ../../inputdisplay.cpp
 
-skinparser.o: ../../skinparser.cpp ../../skinparser.h
+skinparser.o: ../../skinparser.cpp ../../skinparser.h \
+		../../skinpath.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o skinparser.o ../../skinparser.cpp
 
 arduinocom.o: ../../arduinocom.cpp ../../arduinocom.h \
@@ -978,8 +986,13 @@ buttonmashdebug.o: ../../buttonmashdebug.cpp ../../buttonmashdebug.h
 
 browsersourceserver.o: ../../browsersourceserver.cpp ../../browsersourceserver.h \
 		../../inputprovider.h \
-		../../skinparser.h
+		../../skinparser.h \
+		../../skinpath.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o browsersourceserver.o ../../browsersourceserver.cpp
+
+skinpath.o: ../../skinpath.cpp ../../skinpath.h \
+		../../skinparser.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o skinpath.o ../../skinpath.cpp
 
 uinputdevice.o: ../../uinputdevice.cpp ../../uinputdevice.h \
 		../../inputprovider.h \

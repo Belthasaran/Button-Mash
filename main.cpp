@@ -3,6 +3,7 @@
 #include "inputsourceselector.h"
 #include "buttonmashdebug.h"
 #include "browsersourceserver.h"
+#include "skinpath.h"
 #include <QApplication>
 #include <QCoreApplication>
 #include <QProcessEnvironment>
@@ -32,6 +33,9 @@ int main(int argc, char *argv[])
     }
     if (args.contains(QStringLiteral("--self-test-browser-server"))) {
         return BrowserSourceServer::selfTest();
+    }
+    if (args.contains(QStringLiteral("--self-test-skin-paths"))) {
+        return SkinPath::selfTest();
     }
 
     SkinSelector w;

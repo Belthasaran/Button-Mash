@@ -2,6 +2,7 @@
 #include "inputdisplay.h"
 #include "buttonmashdebug.h"
 #include "skinparser.h"
+#include "skinpath.h"
 #include "ui_inputdisplay.h"
 #include <QDomDocument>
 #include <QFileInfo>
@@ -23,13 +24,25 @@ InputDisplay::InputDisplay(RegularSkin skin, PianoSkin pSkin, QWidget *parent) :
     QDomDocument    doc;
     scene = new QGraphicsScene();
     QFileInfo fi(skin.file);
-    QPixmap background(fi.absolutePath() + "/" + skin.background);
+    const QString skinRoot = fi.absolutePath();
+    QString pathErr;
+    const QString bgPath = SkinPath::resolveSkinRelativePath(skinRoot, skin.background, &pathErr);
+    QPixmap background(bgPath);
+    if (background.isNull() && !skin.background.isEmpty()) {
+        qCDebug(buttonmashLog) << "Failed to load skin background:" << skin.background << pathErr;
+    }
     scene->setSceneRect(0, 0, background.size().width(), background.size().height());
     //this->setFixedSize(background.size().width() + 5, background.size().height() + 5);
     scene->addPixmap(background);
     foreach(RegularButtonSkin but, skin.buttons)
     {
-        QPixmap pix(fi.absolutePath() + "/" + but.image);
+        QString imgErr;
+        const QString imgPath = SkinPath::resolveSkinRelativePath(skinRoot, but.image, &imgErr);
+        QPixmap pix(imgPath);
+        if (pix.isNull()) {
+            qCDebug(buttonmashLog) << "Failed to load button image:" << but.name << but.image << imgErr;
+            continue;
+        }
         QGraphicsPixmapItem* newPix = new QGraphicsPixmapItem(pix.scaled(but.width, but.height));
         newPix->setPos(but.x, but.y);
         newPix->setZValue(1);

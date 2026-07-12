@@ -1,13 +1,10 @@
 #include "skinutil.h"
-#include "skinparser.h"
 #include "skinwriter.h"
 
-#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
-#include <QPixmap>
 #include <QStandardPaths>
 
 namespace SkinUtil {

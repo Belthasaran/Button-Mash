@@ -6,6 +6,7 @@
 #include "skinselector.h"
 #include "configpresetstore.h"
 #include "buttonmashdebug.h"
+#include "skinpath.h"
 #include "ui_skinselector.h"
 #include "inputdisplay.h"
 #include "skinparser.h"
@@ -105,12 +106,19 @@ void    SkinSelector::setPreviewScene(const RegularSkin& skin)
     }
     scene->clear();
     QFileInfo fi(skin.file);
-    QPixmap background(fi.absolutePath() + "/" + skin.background);
+    const QString skinRoot = fi.absolutePath();
+    QString pathErr;
+    const QString bgPath = SkinPath::resolveSkinRelativePath(skinRoot, skin.background, &pathErr);
+    QPixmap background(bgPath);
     scene->setSceneRect(0, 0, background.size().width(), background.size().height());
     scene->addPixmap(background);
     foreach(RegularButtonSkin but, skin.buttons)
     {
-        QPixmap pix(fi.absolutePath() + "/" + but.image);
+        QString imgErr;
+        const QString imgPath = SkinPath::resolveSkinRelativePath(skinRoot, but.image, &imgErr);
+        QPixmap pix(imgPath);
+        if (pix.isNull())
+            continue;
         QGraphicsPixmapItem* newPix = new QGraphicsPixmapItem(pix.scaled(but.width, but.height));
         newPix->setPos(but.x, but.y);
         newPix->setZValue(1);
@@ -259,6 +267,13 @@ void SkinSelector::on_startButton_clicked()
             return;
         }
         pSkin = pianoItem->data(Qt::UserRole + 2).value<PianoSkin>();
+    }
+
+    QString skinPathError;
+    if (!SkinParser::validateRegularSkin(currentSkin, true, &skinPathError)) {
+        QMessageBox::warning(this, tr("Button Mash"),
+                             tr("Cannot start display — invalid skin paths:\n%1").arg(skinPathError));
+        return;
     }
 
     BrowserSourceServer::loadSettings(*globalSetting);

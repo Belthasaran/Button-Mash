@@ -65,7 +65,8 @@ SOURCES += \
         triggersdialog.cpp \
         configpresetstore.cpp \
         buttonmashdebug.cpp \
-        browsersourceserver.cpp
+        browsersourceserver.cpp \
+        skinpath.cpp
 unix {
     SOURCES += uinputdevice.cpp
 }
@@ -102,6 +103,7 @@ HEADERS += \
         configpresetstore.h \
         buttonmashdebug.h \
         browsersourceserver.h \
+        skinpath.h \
         third_party/xxhash.h
 unix {
     HEADERS += uinputdevice.h

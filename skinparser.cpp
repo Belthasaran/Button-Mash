@@ -1,5 +1,7 @@
 #include "skinparser.h"
 
+#include "skinpath.h"
+
 #include <QDomDocument>
 #include <QFile>
 #include <QFileInfo>
@@ -10,6 +12,70 @@ int SkinParser::lineNumber = 0;
 int SkinParser::columNumber = 0;
 
 SkinParser::SkinParser() = default;
+
+static bool validateOneRegularSkin(const RegularSkin &skin, bool requireImages, QString *error)
+{
+    if (skin.file.isEmpty()) {
+        if (error)
+            *error = QStringLiteral("Skin has no file path");
+        return false;
+    }
+    const QString skinRoot = QFileInfo(skin.file).absolutePath();
+    if (!skin.background.isEmpty()) {
+        QString err;
+        if (SkinPath::resolveSkinRelativePath(skinRoot, skin.background, &err, requireImages).isEmpty()) {
+            if (error)
+                *error = QStringLiteral("Background \"%1\": %2").arg(skin.background, err);
+            return false;
+        }
+    }
+    for (auto it = skin.buttons.constBegin(); it != skin.buttons.constEnd(); ++it) {
+        const RegularButtonSkin &but = it.value();
+        if (but.image.isEmpty())
+            continue;
+        QString err;
+        if (SkinPath::resolveSkinRelativePath(skinRoot, but.image, &err, requireImages).isEmpty()) {
+            if (error)
+                *error = QStringLiteral("Button \"%1\" image \"%2\": %3").arg(but.name, but.image, err);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool SkinParser::validateRegularSkin(const RegularSkin &skin, bool requireImages, QString *error)
+{
+    if (!validateOneRegularSkin(skin, requireImages, error))
+        return false;
+    for (const RegularSkin &sub : skin.subSkins) {
+        RegularSkin subSkin = sub;
+        if (subSkin.file.isEmpty())
+            subSkin.file = skin.file;
+        if (!validateOneRegularSkin(subSkin, requireImages, error))
+            return false;
+    }
+    return true;
+}
+
+static QString normalizeSkinImageAttribute(const QString &skinRoot, const QString &rawImage,
+                                         bool requireImages, QString *errorOut)
+{
+    QString err;
+    const QString normalized = SkinPath::normalizeSkinRelativePath(rawImage, &err);
+    if (normalized.isEmpty()) {
+        if (errorOut)
+            *errorOut = err;
+        return QString();
+    }
+    if (requireImages) {
+        if (SkinPath::resolveSkinRelativePath(skinRoot, normalized, &err, true).isEmpty()) {
+            if (errorOut)
+                *errorOut = err;
+            return QString();
+        }
+    }
+    return normalized;
+}
 
 RegularSkin SkinParser::parseRegularSkin(const QString &filePath, bool requireImages)
 {
@@ -32,6 +98,7 @@ RegularSkin SkinParser::parseRegularSkin(const QString &filePath, bool requireIm
     toret.name = root.attribute(QStringLiteral("name"));
     toret.type = root.attribute(QStringLiteral("type"), QStringLiteral("snes"));
 
+    const QString skinRoot = fi.absolutePath();
     QMap<QString, RegularButtonSkin> defaultBut;
     RegularSkin *currentSkin = &toret;
     QString firstBgName;
@@ -52,19 +119,39 @@ RegularSkin SkinParser::parseRegularSkin(const QString &filePath, bool requireIm
             currentSkin->backgroundName = child.attribute(QStringLiteral("name"));
             currentSkin->file = filePath;
             currentSkin->author = toret.author;
-            currentSkin->background = child.attribute(QStringLiteral("image"));
+            const QString rawBg = child.attribute(QStringLiteral("image"));
+            QString pathErr;
+            const QString normalizedBg = normalizeSkinImageAttribute(skinRoot, rawBg, requireImages, &pathErr);
+            if (normalizedBg.isEmpty() && !rawBg.isEmpty()) {
+                xmlError = pathErr.isEmpty()
+                               ? QStringLiteral("Invalid background path: %1").arg(rawBg)
+                               : pathErr;
+                return toret;
+            }
+            currentSkin->background = normalizedBg;
             notFirstBg = true;
         }
         if (child.tagName() == QLatin1String("button")) {
             RegularButtonSkin but;
-            but.image = child.attribute(QStringLiteral("image"));
+            const QString rawImage = child.attribute(QStringLiteral("image"));
+            QString pathErr;
+            const QString normalizedImage = normalizeSkinImageAttribute(skinRoot, rawImage, requireImages, &pathErr);
+            if (normalizedImage.isEmpty() && !rawImage.isEmpty()) {
+                xmlError = pathErr.isEmpty()
+                               ? QStringLiteral("Invalid button image path: %1").arg(rawImage)
+                               : pathErr;
+                return toret;
+            }
+            but.image = normalizedImage;
             but.width = 16;
             but.height = 16;
             if (requireImages && !but.image.isEmpty()) {
-                QPixmap pix(fi.absolutePath() + QLatin1Char('/') + but.image);
+                const QString absPath = SkinPath::resolveSkinRelativePath(skinRoot, but.image, &pathErr, true);
+                QPixmap pix(absPath);
                 if (pix.isNull()) {
-                    xmlError = QStringLiteral("Can't open %1/%2")
-                                   .arg(fi.absolutePath(), but.image);
+                    xmlError = pathErr.isEmpty()
+                                   ? QStringLiteral("Can't open %1").arg(but.image)
+                                   : pathErr;
                     return toret;
                 }
                 but.width = pix.width();

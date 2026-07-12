@@ -79,6 +79,7 @@ public:
     SkinParser();
     static RegularSkin parseRegularSkin(const QString &filePath, bool requireImages = true);
     static PianoSkin parsePianoSkin(const QString &filePath);
+    static bool validateRegularSkin(const RegularSkin &skin, bool requireImages, QString *error);
     static QString xmlError;
     static int lineNumber;
     static int columNumber;

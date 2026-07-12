@@ -1,5 +1,7 @@
 #include "browsersourceserver.h"
 
+#include "skinpath.h"
+
 #include "skinparser.h"
 
 #include <QCoreApplication>
@@ -468,15 +470,9 @@ QByteArray BrowserSourceServer::readSkinAsset(const QString &prefix, const QStri
     }
 
     const QString clean = QUrl::fromPercentEncoding(relPath.toUtf8());
-    if (clean.contains(QLatin1String(".."))) {
-        if (ok)
-            *ok = false;
-        return QByteArray();
-    }
-
-    const QString fullPath = QFileInfo(root + QLatin1Char('/') + clean).canonicalFilePath();
-    const QString rootCanonical = QFileInfo(root).canonicalFilePath();
-    if (!fullPath.startsWith(rootCanonical)) {
+    QString err;
+    const QString fullPath = SkinPath::resolveSkinRelativePath(root, clean, &err, true);
+    if (fullPath.isEmpty()) {
         if (ok)
             *ok = false;
         return QByteArray();
