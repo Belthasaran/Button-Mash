@@ -419,7 +419,7 @@ void SkinSelector::on_shareMirrorCheckBox_toggled(bool checked)
 
 void SkinSelector::on_mirrorTargetsButton_clicked()
 {
-    MirrorTargetsDialog dlg(mirrorManager, browserSourceServer->isRunning(), this);
+    MirrorTargetsDialog dlg(mirrorManager, this);
     if (dlg.exec() == QDialog::Accepted) {
         mirrorManager->saveSettings(*globalSetting);
         BrowserSourceServer::saveSettings(*globalSetting);

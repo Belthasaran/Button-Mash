@@ -12,8 +12,7 @@ class MirrorTargetsDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit MirrorTargetsDialog(InputMirrorManager *manager, bool browserServerRunning,
-                                 QWidget *parent = nullptr);
+    explicit MirrorTargetsDialog(InputMirrorManager *manager, QWidget *parent = nullptr);
     ~MirrorTargetsDialog() override;
 
 private slots:
@@ -39,7 +38,6 @@ private:
 
     Ui::MirrorTargetsDialog *ui;
     InputMirrorManager *m_manager;
-    bool m_browserServerRunning;
 };
 
 #endif

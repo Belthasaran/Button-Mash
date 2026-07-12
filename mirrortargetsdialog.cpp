@@ -15,12 +15,10 @@
 
 extern QSettings *globalSetting;
 
-MirrorTargetsDialog::MirrorTargetsDialog(InputMirrorManager *manager, bool browserServerRunning,
-                                         QWidget *parent)
+MirrorTargetsDialog::MirrorTargetsDialog(InputMirrorManager *manager, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::MirrorTargetsDialog)
     , m_manager(manager)
-    , m_browserServerRunning(browserServerRunning)
 {
     ui->setupUi(this);
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &MirrorTargetsDialog::on_buttonBox_accepted);
@@ -30,10 +28,6 @@ MirrorTargetsDialog::MirrorTargetsDialog(InputMirrorManager *manager, bool brows
     loadFromManager();
     refreshSessionLabel();
     refreshBrowserSourceUrls();
-
-    ui->copyMainUrlButton->setEnabled(m_browserServerRunning);
-    ui->copyStackedUrlButton->setEnabled(m_browserServerRunning);
-    ui->copyPianoUrlButton->setEnabled(m_browserServerRunning);
 }
 
 MirrorTargetsDialog::~MirrorTargetsDialog()
