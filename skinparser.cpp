@@ -21,6 +21,11 @@ static bool validateOneRegularSkin(const RegularSkin &skin, bool requireImages, 
         return false;
     }
     const QString skinRoot = QFileInfo(skin.file).absolutePath();
+    if (requireImages && skin.background.isEmpty()) {
+        if (error)
+            *error = QStringLiteral("Missing background image");
+        return false;
+    }
     if (!skin.background.isEmpty()) {
         QString err;
         if (SkinPath::resolveSkinRelativePath(skinRoot, skin.background, &err, requireImages).isEmpty()) {

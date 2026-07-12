@@ -31,9 +31,16 @@ InputDisplay::InputDisplay(RegularSkin skin, PianoSkin pSkin, QWidget *parent) :
     if (background.isNull() && !skin.background.isEmpty()) {
         qCDebug(buttonmashLog) << "Failed to load skin background:" << skin.background << pathErr;
     }
-    scene->setSceneRect(0, 0, background.size().width(), background.size().height());
+    int sceneW = background.width();
+    int sceneH = background.height();
+    if (sceneW <= 0 || sceneH <= 0) {
+        sceneW = 400;
+        sceneH = 200;
+    }
+    scene->setSceneRect(0, 0, sceneW, sceneH);
     //this->setFixedSize(background.size().width() + 5, background.size().height() + 5);
-    scene->addPixmap(background);
+    if (!background.isNull())
+        scene->addPixmap(background);
     foreach(RegularButtonSkin but, skin.buttons)
     {
         QString imgErr;

@@ -110,8 +110,15 @@ void    SkinSelector::setPreviewScene(const RegularSkin& skin)
     QString pathErr;
     const QString bgPath = SkinPath::resolveSkinRelativePath(skinRoot, skin.background, &pathErr);
     QPixmap background(bgPath);
-    scene->setSceneRect(0, 0, background.size().width(), background.size().height());
-    scene->addPixmap(background);
+    int sceneW = background.width();
+    int sceneH = background.height();
+    if (sceneW <= 0 || sceneH <= 0) {
+        sceneW = 400;
+        sceneH = 200;
+    }
+    scene->setSceneRect(0, 0, sceneW, sceneH);
+    if (!background.isNull())
+        scene->addPixmap(background);
     foreach(RegularButtonSkin but, skin.buttons)
     {
         QString imgErr;

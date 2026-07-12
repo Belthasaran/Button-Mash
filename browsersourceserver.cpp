@@ -138,7 +138,9 @@ bool BrowserSourceServer::start(const RegularSkin &mainSkin, const PianoSkin &pi
     m_pressed.clear();
     m_listenPort = port;
 
-    const QPixmap bg(m_mainRoot + QLatin1Char('/') + mainSkin.background);
+    QString bgErr;
+    const QString bgPath = SkinPath::resolveSkinRelativePath(m_mainRoot, mainSkin.background, &bgErr, true);
+    const QPixmap bg(bgPath);
     m_mainSceneWidth = bg.width();
     m_mainSceneHeight = bg.height();
     if (m_mainSceneWidth <= 0 || m_mainSceneHeight <= 0) {
