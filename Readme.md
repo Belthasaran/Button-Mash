@@ -17,6 +17,8 @@ cd button-mash/build && qmake ../ButtonMash.pro && make
 npm run test:buttonmash-inputformats
 ```
 
+CI workflows (GitHub Actions): **Windows** standalone `.7z` (`.github/workflows/windows.yml`); **Linux flatpak** (`.github/workflows/linux-flatpak.yml`). The `browser-source/` tree must be committed — it is bundled via `browser-source.qrc`.
+
 Config: set `BUTTONMASH_CONFIG=/path/to/file.conf` to use a dedicated Ini settings file (omit for the default Qt path, typically `~/.config/ButtonMash.conf`).
 
 Debug console output (input traces, gamepad discovery, etc.) is **off** by default. Enable either:

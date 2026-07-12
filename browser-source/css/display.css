@@ -1,0 +1,75 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+#root {
+  position: relative;
+  display: inline-block;
+  background: #000;
+}
+
+.display-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.main-canvas,
+.piano-canvas,
+.tag-canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.connection-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.connection-overlay.hidden {
+  display: none;
+}
+
+.connection-overlay-box {
+  background: #001f3f;
+  color: #ff6b6b;
+  font-weight: bold;
+  font-size: clamp(18px, 4vw, 22px);
+  padding: 1.25em 1.75em;
+  border-radius: 8px;
+  text-align: left;
+  max-width: 100%;
+  line-height: 1.4;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+.connection-overlay-line2 {
+  margin-top: 0.5em;
+}
+
+.connection-overlay--compact .connection-overlay-box {
+  font-size: clamp(11px, 2.5vw, 14px);
+  padding: 0.35em 0.5em;
+  border-radius: 4px;
+}
+
+.connection-overlay--compact .connection-overlay-line2 {
+  display: none;
+}

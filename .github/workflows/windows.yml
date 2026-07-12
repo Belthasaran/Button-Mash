@@ -65,6 +65,22 @@ jobs:
           }
         shell: pwsh
       -
+        name: Verify browser-source assets
+        run: |
+          $files = @(
+            'browser-source/main.html',
+            'browser-source/stacked.html',
+            'browser-source/piano.html',
+            'browser-source/css/display.css',
+            'browser-source/js/websocket-client.js',
+            'browser-source/js/main-renderer.js',
+            'browser-source/js/piano-renderer.js'
+          )
+          foreach ($f in $files) {
+            if (-not (Test-Path $f)) { throw "Missing required file: $f" }
+          }
+        shell: pwsh
+      -
         name: build
         id: build
         run: SQPackager --build windows
