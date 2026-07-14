@@ -5,6 +5,7 @@
 #include "inputsessionlogger.h"
 #include <QObject>
 #include <QUdpSocket>
+#include <QTimer>
 #include <QVector>
 
 struct MirrorRemoteTarget
@@ -38,18 +39,31 @@ public:
     /** Little-endian remote_message: 20 bytes (18 usable + 2 pad). */
     static QByteArray buildRetroArchPacket(InputProvider::SNESButton button, bool pressed);
 
+    /** Exponential backoff step for idle resync (testable). */
+    static int nextResyncIntervalMs(int currentIntervalMs);
+
 public slots:
     void onButtonPressed(InputProvider::SNESButton button);
     void onButtonReleased(InputProvider::SNESButton button);
 
+private slots:
+    void onResyncTimer();
+
 private:
     void sendToTargets(quint16 after, quint16 pressed, quint16 released);
+    void sendFullStateResync();
+    void armResyncTimer();
+    void stopResyncTimer();
+    void noteInputActivity();
 
     InputSessionLogger m_logger;
     QUdpSocket m_udp;
+    QTimer m_resyncTimer;
     bool m_shareEnabled;
     QVector<MirrorRemoteTarget> m_targets;
     quint16 m_bits;
+    qint64 m_lastInputChangeMs = 0;
+    int m_resyncIntervalMs = 300;
 };
 
 #endif

@@ -5,18 +5,40 @@
 #include <QHostAddress>
 #include <QSettings>
 #include <QtEndian>
+#include <algorithm>
 #include <cstring>
+
+namespace {
+
+constexpr int kMinIdleBeforeResyncMs = 300;
+constexpr int kInitialResyncIntervalMs = 300;
+constexpr int kMaxResyncIntervalMs = 30000;
+
+} // namespace
 
 InputMirrorManager::InputMirrorManager(QObject *parent)
     : QObject(parent)
     , m_shareEnabled(false)
     , m_bits(0)
+    , m_resyncIntervalMs(kInitialResyncIntervalMs)
 {
+    m_resyncTimer.setSingleShot(true);
+    connect(&m_resyncTimer, &QTimer::timeout, this, &InputMirrorManager::onResyncTimer);
+}
+
+int InputMirrorManager::nextResyncIntervalMs(int currentIntervalMs)
+{
+    const int doubled = currentIntervalMs * 2;
+    return std::min(doubled, kMaxResyncIntervalMs);
 }
 
 void InputMirrorManager::setShareEnabled(bool enabled)
 {
+    if (m_shareEnabled == enabled)
+        return;
     m_shareEnabled = enabled;
+    if (!enabled)
+        stopResyncTimer();
 }
 
 void InputMirrorManager::setTargets(const QVector<MirrorRemoteTarget> &targets)
@@ -78,15 +100,81 @@ void InputMirrorManager::saveSettings(QSettings &settings) const
 void InputMirrorManager::startSession()
 {
     m_bits = 0;
+    stopResyncTimer();
     if (!m_shareEnabled)
         return;
     // startLogging mints Ed25519 keys and derives session id.
     m_logger.startLogging();
+    m_lastInputChangeMs = QDateTime::currentMSecsSinceEpoch();
+    armResyncTimer();
 }
 
 void InputMirrorManager::stopSession()
 {
+    stopResyncTimer();
     m_logger.stopLogging();
+}
+
+void InputMirrorManager::stopResyncTimer()
+{
+    m_resyncTimer.stop();
+    m_resyncIntervalMs = kInitialResyncIntervalMs;
+}
+
+void InputMirrorManager::noteInputActivity()
+{
+    m_lastInputChangeMs = QDateTime::currentMSecsSinceEpoch();
+    m_resyncIntervalMs = kInitialResyncIntervalMs;
+    armResyncTimer();
+}
+
+void InputMirrorManager::armResyncTimer()
+{
+    if (!m_shareEnabled)
+        return;
+    m_resyncTimer.start(kMinIdleBeforeResyncMs);
+}
+
+void InputMirrorManager::onResyncTimer()
+{
+    if (!m_shareEnabled)
+        return;
+
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    const qint64 idleMs = nowMs - m_lastInputChangeMs;
+    if (idleMs < kMinIdleBeforeResyncMs) {
+        m_resyncTimer.start(int(kMinIdleBeforeResyncMs - idleMs));
+        return;
+    }
+
+    sendFullStateResync();
+    m_resyncIntervalMs = nextResyncIntervalMs(m_resyncIntervalMs);
+    m_resyncTimer.start(m_resyncIntervalMs);
+}
+
+void InputMirrorManager::sendFullStateResync()
+{
+    QByteArray sessionId;
+    if (m_logger.isLogging())
+        sessionId = m_logger.state().sessionId();
+
+    for (const MirrorRemoteTarget &t : m_targets) {
+        if (!t.enabled || t.host.isEmpty())
+            continue;
+        if (t.protocol == QLatin1String("RetroArchRemotePad")) {
+            for (int bit = 4; bit < 16; ++bit) {
+                const InputProvider::SNESButton button = SnesBitOrder::buttonForBitIndex(bit);
+                const bool held = (m_bits & quint16(1u << bit)) != 0;
+                const QByteArray pkt = buildRetroArchPacket(button, held);
+                if (!pkt.isEmpty())
+                    m_udp.writeDatagram(pkt, QHostAddress(t.host), t.port);
+            }
+        } else {
+            const QByteArray pkt = ButtonMashRemoteProvider::buildPacket(m_bits, 0, 0, 0, sessionId, true);
+            if (!pkt.isEmpty())
+                m_udp.writeDatagram(pkt, QHostAddress(t.host), t.port);
+        }
+    }
 }
 
 QByteArray InputMirrorManager::buildRetroArchPacket(InputProvider::SNESButton button, bool pressed)
@@ -133,8 +221,10 @@ void InputMirrorManager::sendToTargets(quint16 after, quint16 pressed, quint16 r
             Q_UNUSED(released);
             continue;
         } else {
-            pkt = ButtonMashRemoteProvider::buildPacket(after, pressed, released, 0,
-                                                        m_logger.state().sessionId(), true);
+            QByteArray sessionId;
+            if (m_logger.isLogging())
+                sessionId = m_logger.state().sessionId();
+            pkt = ButtonMashRemoteProvider::buildPacket(after, pressed, released, 0, sessionId, true);
         }
         if (!pkt.isEmpty())
             m_udp.writeDatagram(pkt, QHostAddress(t.host), t.port);
@@ -160,6 +250,7 @@ void InputMirrorManager::onButtonPressed(InputProvider::SNESButton button)
             }
         }
         sendToTargets(m_bits, pressed, 0);
+        noteInputActivity();
     }
 }
 
@@ -181,5 +272,6 @@ void InputMirrorManager::onButtonReleased(InputProvider::SNESButton button)
             }
         }
         sendToTargets(m_bits, 0, released);
+        noteInputActivity();
     }
 }

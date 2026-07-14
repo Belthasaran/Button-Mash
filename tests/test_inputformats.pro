@@ -18,7 +18,8 @@ SOURCES += \
     ../inputprovider.cpp \
     ../inputmirrormanager.cpp \
     ../inputtriggers.cpp \
-    ../uinputdevice.cpp
+    ../uinputdevice.cpp \
+    ../third_party/xxhash.c
 
 HEADERS += \
     ../snesbitorder.h \

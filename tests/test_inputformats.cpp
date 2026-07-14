@@ -140,6 +140,36 @@ int main(int argc, char **argv)
     expect(!recv.handleDatagram(QByteArray(ButtonMashRemoteProvider::kMaxUdpDatagram + 1, 'A')),
            "BMIR rejects oversize buffer");
 
+    // Idle resync: duplicate full-state BMIR is silent when already in sync
+    {
+        int pressCount = 0;
+        int releaseCount = 0;
+        ButtonMashRemoteProvider bmirResync(39996);
+        QObject::connect(&bmirResync, &InputProvider::buttonPressed, &app,
+                         [&](InputProvider::SNESButton) { ++pressCount; });
+        QObject::connect(&bmirResync, &InputProvider::buttonReleased, &app,
+                         [&](InputProvider::SNESButton) { ++releaseCount; });
+
+        const QByteArray pressPkt = ButtonMashRemoteProvider::buildPacket(
+            0x8000, 0x8000, 0, 0, QByteArray(16, '\0'), true);
+        expect(bmirResync.handleDatagram(pressPkt), "BMIR resync test press applied");
+        expect(pressCount == 1 && releaseCount == 0, "BMIR one press edge");
+
+        const QByteArray sameState = ButtonMashRemoteProvider::buildPacket(
+            0x8000, 0, 0, 0, QByteArray(16, '\0'), true);
+        expect(bmirResync.handleDatagram(sameState), "BMIR resync same state accepted");
+        expect(pressCount == 1 && releaseCount == 0, "BMIR in-sync resync silent");
+
+        const QByteArray repair = ButtonMashRemoteProvider::buildPacket(
+            0, 0, 0, 0, QByteArray(16, '\0'), true);
+        expect(bmirResync.handleDatagram(repair), "BMIR resync repair applied");
+        expect(pressCount == 1 && releaseCount == 1, "BMIR resync repairs stuck press");
+    }
+
+    expect(InputMirrorManager::nextResyncIntervalMs(300) == 600, "resync interval doubles");
+    expect(InputMirrorManager::nextResyncIntervalMs(20000) == 30000, "resync interval caps at 30s");
+    expect(InputMirrorManager::nextResyncIntervalMs(30000) == 30000, "resync interval stays at cap");
+
     RetroArchRemotePadProvider ra(39998);
     // Explicit LE wire bytes (18 usable; often sent as 20 with pad)
     QByteArray rapkt(20, '\0');
@@ -181,6 +211,36 @@ int main(int argc, char **argv)
                "outbound pressed state");
         RetroArchRemotePadProvider ra2(39997);
         expect(ra2.handleDatagram(out), "outbound packet accepted by receiver");
+    }
+
+    // Idle resync: RetroArch full-state blast dedups in sync; repairs stuck press
+    {
+        int pressCount = 0;
+        int releaseCount = 0;
+        RetroArchRemotePadProvider raResync(39995);
+        QObject::connect(&raResync, &InputProvider::buttonPressed, &app,
+                         [&](InputProvider::SNESButton) { ++pressCount; });
+        QObject::connect(&raResync, &InputProvider::buttonReleased, &app,
+                         [&](InputProvider::SNESButton) { ++releaseCount; });
+
+        const QByteArray bPress = InputMirrorManager::buildRetroArchPacket(InputProvider::B, true);
+        expect(raResync.handleDatagram(bPress), "RA resync test B press");
+        expect(pressCount == 1 && releaseCount == 0, "RA one press edge");
+
+        for (int bit = 4; bit < 16; ++bit) {
+            const InputProvider::SNESButton btn = SnesBitOrder::buttonForBitIndex(bit);
+            const bool held = (bit == SnesBitOrder::B);
+            const QByteArray pkt = InputMirrorManager::buildRetroArchPacket(btn, held);
+            expect(raResync.handleDatagram(pkt), "RA in-sync resync datagram");
+        }
+        expect(pressCount == 1 && releaseCount == 0, "RA in-sync resync silent");
+
+        for (int bit = 4; bit < 16; ++bit) {
+            const InputProvider::SNESButton btn = SnesBitOrder::buttonForBitIndex(bit);
+            const QByteArray pkt = InputMirrorManager::buildRetroArchPacket(btn, false);
+            raResync.handleDatagram(pkt);
+        }
+        expect(releaseCount == 1, "RA resync repairs stuck B");
     }
 
     // Trigger config round-trip + defaults

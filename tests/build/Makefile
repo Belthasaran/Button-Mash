@@ -62,7 +62,8 @@ SOURCES       = ../test_inputformats.cpp \
 		../../inputprovider.cpp \
 		../../inputmirrormanager.cpp \
 		../../inputtriggers.cpp \
-		../../uinputdevice.cpp moc_inputsessionlogger.cpp \
+		../../uinputdevice.cpp \
+		../../third_party/xxhash.c moc_inputsessionlogger.cpp \
 		moc_buttonmashremoteprovider.cpp \
 		moc_retroarchremotepadprovider.cpp \
 		moc_inputprovider.cpp \
@@ -79,6 +80,7 @@ OBJECTS       = test_inputformats.o \
 		inputmirrormanager.o \
 		inputtriggers.o \
 		uinputdevice.o \
+		xxhash.o \
 		moc_inputsessionlogger.o \
 		moc_buttonmashremoteprovider.o \
 		moc_retroarchremotepadprovider.o \
@@ -184,7 +186,8 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../inputprovider.cpp \
 		../../inputmirrormanager.cpp \
 		../../inputtriggers.cpp \
-		../../uinputdevice.cpp
+		../../uinputdevice.cpp \
+		../../third_party/xxhash.c
 QMAKE_TARGET  = test_inputformats
 DESTDIR       = 
 TARGET        = test_inputformats
@@ -373,7 +376,7 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents ../../snesbitorder.h ../../inputsessionstate.h ../../inputsessionlogger.h ../../sessioncrypto.h ../../buttonmashremoteprovider.h ../../retroarchremotepadprovider.h ../../inputprovider.h ../../inputmirrormanager.h ../../inputtriggers.h ../../uinputdevice.h ../../third_party/xxhash.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../test_inputformats.cpp ../../snesbitorder.cpp ../../inputsessionstate.cpp ../../inputsessionlogger.cpp ../../sessioncrypto.cpp ../../buttonmashremoteprovider.cpp ../../retroarchremotepadprovider.cpp ../../inputprovider.cpp ../../inputmirrormanager.cpp ../../inputtriggers.cpp ../../uinputdevice.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../test_inputformats.cpp ../../snesbitorder.cpp ../../inputsessionstate.cpp ../../inputsessionlogger.cpp ../../sessioncrypto.cpp ../../buttonmashremoteprovider.cpp ../../retroarchremotepadprovider.cpp ../../inputprovider.cpp ../../inputmirrormanager.cpp ../../inputtriggers.cpp ../../uinputdevice.cpp ../../third_party/xxhash.c $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -525,6 +528,9 @@ uinputdevice.o: ../../uinputdevice.cpp ../../uinputdevice.h \
 		../../inputprovider.h \
 		../../snesbitorder.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o uinputdevice.o ../../uinputdevice.cpp
+
+xxhash.o: ../../third_party/xxhash.c ../../third_party/xxhash.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o xxhash.o ../../third_party/xxhash.c
 
 moc_inputsessionlogger.o: moc_inputsessionlogger.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_inputsessionlogger.o moc_inputsessionlogger.cpp
